@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate the README benchmark chart (assets/benchmarks-{light,dark}.svg).
+"""Generate the README benchmark chart (assets/benchmarks-{light,dark}-chart.svg).
 
 One row per corpus file: the bar length is how much smaller densezip's
 output is than the best competitor's (best of gzip/bzip2/xz/zstd/7z chosen

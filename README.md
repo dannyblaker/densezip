@@ -140,8 +140,8 @@ of gzip/bzip2/xz/zstd/7z chosen per file, a stricter baseline than any
 single tool:
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks-dark.svg">
-  <img alt="Bar chart: how much smaller densezip's output is than the best competitor's for each of 20 files. Reductions range from 0.1% (silesia/nci) to 79.2% (sample.png)." src="assets/benchmarks-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks-dark-chart.svg">
+  <img alt="Bar chart: how much smaller densezip's output is than the best competitor's for each of 20 files. Reductions range from 0.1% (silesia/nci) to 79.2% (sample.png)." src="assets/benchmarks-light-chart.svg">
 </picture>
 
 Machine: 2× Xeon E5-2683 v4 (32 cores / 64 threads), 125 GiB RAM.
