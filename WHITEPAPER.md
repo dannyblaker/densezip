@@ -1,4 +1,4 @@
-# densezip: Maximum-Ratio Lossless Archiving via Recompression, Context Mixing, and Backend Racing
+# Dense Zip: Maximum-Ratio Lossless Archiving via Recompression, Context Mixing, and Backend Racing
 
 **Danny Blaker** · July 2026 · v0.1
 
