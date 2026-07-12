@@ -492,7 +492,7 @@ TOCs fail with an error rather than an allocation storm.
 
 ## 11. Measured results
 
-Full methodology and tables in [BENCHMARKS.md](BENCHMARKS.md); competitors
+Full methodology and tables in the [README's Benchmarks section](README.md#benchmarks); competitors
 are `gzip -9`, `bzip2 -9`, `xz -9e`, `zstd --ultra -22 --long=27`,
 `7z -mx=9`, and the baseline is the **best competitor per file** — stricter
 than any single tool. densezip wins all 20 files:

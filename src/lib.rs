@@ -4,7 +4,7 @@
 //! losslessly recompress them (preflate / lepton), apply reversible
 //! transforms, then race every stream through store/zstd/brotli/LZMA/dzcm
 //! and keep the smallest verified result. See README.md for the format
-//! overview and BENCHMARKS.md for measured results.
+//! overview and measured results.
 
 pub mod archive;
 pub mod backends;

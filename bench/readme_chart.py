@@ -4,10 +4,11 @@
 One row per corpus file: the bar length is how much smaller densezip's
 output is than the best competitor's (best of gzip/bzip2/xz/zstd/7z chosen
 per file) — longer bar = bigger win, and the label restates the bar. Data
-is copied from BENCHMARKS.md — re-run this script after updating it.
+is copied from the benchmark tables in README.md — re-run this script
+after updating them.
 """
 
-# (file, densezip margin vs best competitor, % — from BENCHMARKS.md)
+# (file, densezip margin vs best competitor, % — from the README tables)
 REAL = [
     ("sample.png", 79.2),
     ("sample.pdf", 56.2),
