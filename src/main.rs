@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[command(
     name = "dnz",
     version,
-    about = "An archiver that beats gzip/7z on output size"
+    about = "Dense Zip: An archiver that produces small archives."
 )]
 struct Cli {
     #[command(subcommand)]
