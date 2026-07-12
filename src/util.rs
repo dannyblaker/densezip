@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 pub fn write_varint(out: &mut Vec<u8>, mut v: u64) {
     loop {
@@ -53,7 +53,11 @@ impl<'a> Reader<'a> {
 
     pub fn bytes(&mut self, n: usize) -> Result<&'a [u8]> {
         if self.pos + n > self.data.len() {
-            bail!("truncated bytes: want {} have {}", n, self.data.len() - self.pos);
+            bail!(
+                "truncated bytes: want {} have {}",
+                n,
+                self.data.len() - self.pos
+            );
         }
         let s = &self.data[self.pos..self.pos + n];
         self.pos += n;
@@ -86,12 +90,13 @@ pub fn xxh3(data: &[u8]) -> u64 {
 pub fn available_ram_bytes() -> u64 {
     if let Ok(s) = std::fs::read_to_string("/proc/meminfo") {
         for line in s.lines() {
-            if let Some(rest) = line.strip_prefix("MemAvailable:") {
-                if let Some(kb) =
-                    rest.trim().split_whitespace().next().and_then(|v| v.parse::<u64>().ok())
-                {
-                    return kb * 1024;
-                }
+            if let Some(rest) = line.strip_prefix("MemAvailable:")
+                && let Some(kb) = rest
+                    .split_whitespace()
+                    .next()
+                    .and_then(|v| v.parse::<u64>().ok())
+            {
+                return kb * 1024;
             }
         }
     }

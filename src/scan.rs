@@ -11,7 +11,7 @@ use crate::channels::{Channels, PixelBlob};
 use crate::plan::{DeflateSeg, PixelEnc, PngIdatSeg, Seg};
 use crate::rebuild::unfilter;
 use crate::util::adler32;
-use preflate_rs::{preflate_whole_deflate_stream, PreflateConfig};
+use preflate_rs::{PreflateConfig, preflate_whole_deflate_stream};
 
 const MAX_DEPTH: u32 = 3;
 /// Don't bother recompressing streams whose plain text is smaller than this;
@@ -62,7 +62,9 @@ pub fn plan_bytes(data: &[u8], depth: u32, ch: &mut Channels) -> Vec<Seg> {
         // Literal run before the candidate must hit the plain channel first.
         if pos > lit_start {
             ch.plain.extend_from_slice(&data[lit_start..pos]);
-            segs.push(Seg::Raw { len: (pos - lit_start) as u64 });
+            segs.push(Seg::Raw {
+                len: (pos - lit_start) as u64,
+            });
         }
         match try_build(&cand, data, pos, depth, ch) {
             Some((seg, consumed)) => {
@@ -78,7 +80,9 @@ pub fn plan_bytes(data: &[u8], depth: u32, ch: &mut Channels) -> Vec<Seg> {
     }
     if data.len() > lit_start {
         ch.plain.extend_from_slice(&data[lit_start..]);
-        segs.push(Seg::Raw { len: (data.len() - lit_start) as u64 });
+        segs.push(Seg::Raw {
+            len: (data.len() - lit_start) as u64,
+        });
     }
     segs
 }
@@ -90,10 +94,10 @@ fn collect_candidates(data: &[u8]) -> Vec<(usize, Cand)> {
     while i + 2 < n {
         match data[i] {
             0x89 => {
-                if data[i..].starts_with(b"\x89PNG\r\n\x1a\n") {
-                    if let Some((idat_pos, info)) = parse_png(&data[i..]) {
-                        out.push((i + idat_pos, Cand::Png(info)));
-                    }
+                if data[i..].starts_with(b"\x89PNG\r\n\x1a\n")
+                    && let Some((idat_pos, info)) = parse_png(&data[i..])
+                {
+                    out.push((i + idat_pos, Cand::Png(info)));
                 }
             }
             0x1f => {
@@ -118,14 +122,12 @@ fn collect_candidates(data: &[u8]) -> Vec<(usize, Cand)> {
             0x78 => {
                 let h = ((data[i] as u16) << 8) | data[i + 1] as u16;
                 // valid zlib header: deflate method, window <= 32k, no preset dict
-                if h % 31 == 0 && data[i + 1] & 0x20 == 0 {
+                if h.is_multiple_of(31) && data[i + 1] & 0x20 == 0 {
                     out.push((i, Cand::Zlib));
                 }
             }
-            0xff => {
-                if data[i + 1] == 0xd8 && data[i + 2] == 0xff {
-                    out.push((i, Cand::Jpeg));
-                }
+            0xff if data[i + 1] == 0xd8 && data[i + 2] == 0xff => {
+                out.push((i, Cand::Jpeg));
             }
             _ => {}
         }
@@ -189,7 +191,17 @@ fn parse_png(png: &[u8]) -> Option<(usize, PngInfo)> {
     if chunk_lens.is_empty() || width == 0 || height == 0 {
         return None;
     }
-    Some((idat_start, PngInfo { width, height, bit_depth, color_type, interlace, chunk_lens }))
+    Some((
+        idat_start,
+        PngInfo {
+            width,
+            height,
+            bit_depth,
+            color_type,
+            interlace,
+            chunk_lens,
+        },
+    ))
 }
 
 struct DeflateHit {
@@ -220,7 +232,9 @@ fn try_deflate(data: &[u8], pos: usize, depth: u32, ch: &mut Channels) -> Option
         plan_bytes(plain, depth + 1, ch)
     } else {
         ch.plain.extend_from_slice(plain);
-        vec![Seg::Raw { len: plain.len() as u64 }]
+        vec![Seg::Raw {
+            len: plain.len() as u64,
+        }]
     };
     Some(DeflateHit {
         seg: DeflateSeg {
@@ -254,7 +268,10 @@ fn try_build(
             // The adler32 trailer is recomputed on rebuild, so it must match here.
             if at + 4 <= data.len() && data[at..at + 4] == hit.plain_adler.to_be_bytes() {
                 Some((
-                    Seg::Zlib { header: [data[pos], data[pos + 1]], body: hit.seg },
+                    Seg::Zlib {
+                        header: [data[pos], data[pos + 1]],
+                        body: hit.seg,
+                    },
                     2 + hit.deflate_len + 4,
                 ))
             } else {
@@ -271,7 +288,10 @@ fn try_build(
                 && data[at + 4..at + 8] == hit.plain_isize.to_le_bytes()
             {
                 Some((
-                    Seg::Gzip { header_len: hlen as u32, body: hit.seg },
+                    Seg::Gzip {
+                        header_len: hlen as u32,
+                        body: hit.seg,
+                    },
                     hlen + hit.deflate_len + 8,
                 ))
             } else {
@@ -332,7 +352,7 @@ fn try_png(info: &PngInfo, data: &[u8], pos: usize, ch: &mut Channels) -> Option
         return None;
     }
     let h = ((zlib[0] as u16) << 8) | zlib[1] as u16;
-    if h % 31 != 0 || zlib[0] & 0x0f != 8 || zlib[1] & 0x20 != 0 {
+    if !h.is_multiple_of(31) || zlib[0] & 0x0f != 8 || zlib[1] & 0x20 != 0 {
         return None;
     }
     let (result, plain) = preflate_whole_deflate_stream(&zlib[2..], &preflate_config()).ok()?;
@@ -366,20 +386,22 @@ fn try_png(info: &PngInfo, data: &[u8], pos: usize, ch: &mut Channels) -> Option
 
     // Prefer raw pixels when they compress better than filtered scanlines.
     let mut chose_unfiltered = false;
-    if info.interlace == 0 {
-        if let Some((filters, pixels)) = unfilter(&seg, plain) {
-            let est_f = quick_estimate(plain);
-            let est_u = quick_estimate(&pixels);
-            if est_u < est_f {
-                seg.pixels = PixelEnc::Unfiltered { blob: ch.pixel_blobs.len() as u32 };
-                ch.filters.extend_from_slice(&filters);
-                ch.pixel_blobs.push(PixelBlob {
-                    data: pixels,
-                    stride: seg.stride() as u32,
-                    bpp: seg.filter_bpp() as u32,
-                });
-                chose_unfiltered = true;
-            }
+    if info.interlace == 0
+        && let Some((filters, pixels)) = unfilter(&seg, plain)
+    {
+        let est_f = quick_estimate(plain);
+        let est_u = quick_estimate(&pixels);
+        if est_u < est_f {
+            seg.pixels = PixelEnc::Unfiltered {
+                blob: ch.pixel_blobs.len() as u32,
+            };
+            ch.filters.extend_from_slice(&filters);
+            ch.pixel_blobs.push(PixelBlob {
+                data: pixels,
+                stride: seg.stride() as u32,
+                bpp: seg.filter_bpp() as u32,
+            });
+            chose_unfiltered = true;
         }
     }
     if !chose_unfiltered {
@@ -389,7 +411,9 @@ fn try_png(info: &PngInfo, data: &[u8], pos: usize, ch: &mut Channels) -> Option
 }
 
 fn quick_estimate(data: &[u8]) -> usize {
-    zstd::bulk::compress(data, 12).map(|v| v.len()).unwrap_or(usize::MAX)
+    zstd::bulk::compress(data, 12)
+        .map(|v| v.len())
+        .unwrap_or(usize::MAX)
 }
 
 fn try_jpeg(data: &[u8], pos: usize, ch: &mut Channels) -> Option<(Seg, usize)> {
@@ -410,14 +434,16 @@ fn try_jpeg(data: &[u8], pos: usize, ch: &mut Channels) -> Option<(Seg, usize)> 
             let features = lepton_jpeg::EnabledFeatures::compat_lepton_vector_write();
             let pool = lepton_jpeg::SingleThreadPool {};
             if let Ok((blob, _metrics)) = lepton_jpeg::encode_lepton_verify(slice, &features, &pool)
+                && blob.len() < slice.len()
             {
-                if blob.len() < slice.len() {
-                    ch.lepton.extend_from_slice(&blob);
-                    return Some((
-                        Seg::Jpeg { lepton_len: blob.len() as u64, orig_len: slice.len() as u64 },
-                        end,
-                    ));
-                }
+                ch.lepton.extend_from_slice(&blob);
+                return Some((
+                    Seg::Jpeg {
+                        lepton_len: blob.len() as u64,
+                        orig_len: slice.len() as u64,
+                    },
+                    end,
+                ));
             }
             tries += 1;
         }

@@ -103,8 +103,26 @@ gzip/bzip2/xz/zstd/7z per file:
 
 ```
 cargo build --release
-cargo test --release        # 13 integration + 8 unit tests, all round-trip based
+cargo test --release        # 14 integration + 9 unit tests, all round-trip based
 ```
 
 Requires Rust stable. The compressor allocates large hash tables (hundreds of
 MB to a few GB depending on input size) and uses all cores for backend racing.
+
+## Status
+
+The format is young (v0.1) and may still change between versions — don't use
+`.dnz` as your only copy of anything yet. Every archive is self-checked at
+pack time, and `dnz t` verifies bit-exact reconstruction at any time.
+
+## License
+
+AGPL-3.0-or-later. If you want to use densezip in a proprietary product,
+contact me about a commercial license.
+
+densezip builds on excellent open-source work:
+[preflate-rs](https://github.com/microsoft/preflate-rs) and
+[lepton_jpeg_rust](https://github.com/microsoft/lepton_jpeg_rust) (Microsoft,
+Apache-2.0), plus the zstd, brotli, and lzma-rust2 crates. The dzcm
+context-mixing engine is an original implementation inspired by the published
+PAQ/ZPAQ architecture.

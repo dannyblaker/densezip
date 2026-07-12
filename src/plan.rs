@@ -6,8 +6,8 @@
 //! filter bytes, lepton blobs, per-image pixel blobs) which are compressed
 //! independently with whichever backend wins.
 
-use crate::util::{write_varint, Reader};
-use anyhow::{bail, Result};
+use crate::util::{Reader, write_varint};
+use anyhow::{Result, bail};
 
 #[derive(Debug, Clone)]
 pub enum Seg {
@@ -154,7 +154,10 @@ fn write_seg(out: &mut Vec<u8>, seg: &Seg) {
                 }
             }
         }
-        Seg::Jpeg { lepton_len, orig_len } => {
+        Seg::Jpeg {
+            lepton_len,
+            orig_len,
+        } => {
             out.push(TAG_JPEG);
             write_varint(out, *lepton_len);
             write_varint(out, *orig_len);
@@ -178,7 +181,11 @@ fn read_deflate_body(r: &mut Reader) -> Result<DeflateSeg> {
     let corrections_len = r.varint()?;
     let plain_len = r.varint()?;
     let inner = read_segs(r)?;
-    Ok(DeflateSeg { corrections_len, plain_len, inner })
+    Ok(DeflateSeg {
+        corrections_len,
+        plain_len,
+        inner,
+    })
 }
 
 fn read_seg(r: &mut Reader) -> Result<Seg> {
@@ -189,11 +196,17 @@ fn read_seg(r: &mut Reader) -> Result<Seg> {
         TAG_ZLIB => {
             let h = r.bytes(2)?;
             let header = [h[0], h[1]];
-            Seg::Zlib { header, body: read_deflate_body(r)? }
+            Seg::Zlib {
+                header,
+                body: read_deflate_body(r)?,
+            }
         }
         TAG_GZIP => {
             let header_len = r.varint()? as u32;
-            Seg::Gzip { header_len, body: read_deflate_body(r)? }
+            Seg::Gzip {
+                header_len,
+                body: read_deflate_body(r)?,
+            }
         }
         TAG_PNG => {
             let n = r.varint()? as usize;
@@ -216,7 +229,9 @@ fn read_seg(r: &mut Reader) -> Result<Seg> {
             let color_type = r.byte()?;
             let pixels = match r.byte()? {
                 0 => PixelEnc::Filtered,
-                1 => PixelEnc::Unfiltered { blob: r.varint()? as u32 },
+                1 => PixelEnc::Unfiltered {
+                    blob: r.varint()? as u32,
+                },
                 x => bail!("bad pixel mode {}", x),
             };
             Seg::PngIdat(PngIdatSeg {
@@ -232,7 +247,10 @@ fn read_seg(r: &mut Reader) -> Result<Seg> {
                 pixels,
             })
         }
-        TAG_JPEG => Seg::Jpeg { lepton_len: r.varint()?, orig_len: r.varint()? },
+        TAG_JPEG => Seg::Jpeg {
+            lepton_len: r.varint()?,
+            orig_len: r.varint()?,
+        },
         x => bail!("bad segment tag {}", x),
     })
 }

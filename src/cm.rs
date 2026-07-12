@@ -14,7 +14,7 @@
 //! Everything is integer arithmetic with an embedded squash table, so output
 //! is bit-identical across platforms.
 
-use anyhow::{bail, ensure, Result};
+use anyhow::{Result, bail, ensure};
 
 mod tables {
     include!("cm_tables.rs");
@@ -93,7 +93,10 @@ fn build_states() -> StateTable {
     // stable order: by total count then n1 (deterministic)
     pairs.sort_by_key(|&(a, b)| (a as u32 + b as u32, b, a));
     let index = |n0: u32, n1: u32| -> u8 {
-        pairs.iter().position(|&(a, b)| a as u32 == n0 && b as u32 == n1).unwrap() as u8
+        pairs
+            .iter()
+            .position(|&(a, b)| a as u32 == n0 && b as u32 == n1)
+            .unwrap() as u8
     };
     let mut next = Vec::with_capacity(pairs.len());
     for &(n0, n1) in &pairs {
@@ -122,7 +125,10 @@ fn build_states() -> StateTable {
         }
         next.push(nx);
     }
-    StateTable { next, counts: pairs }
+    StateTable {
+        next,
+        counts: pairs,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -181,7 +187,12 @@ impl CmConfig {
             table_bits -= 1;
             match_bits = match_bits.min(table_bits);
         }
-        CmConfig { table_bits, match_bits, stride: 0, bpp: 0 }
+        CmConfig {
+            table_bits,
+            match_bits,
+            stride: 0,
+            bpp: 0,
+        }
     }
 }
 
@@ -209,8 +220,10 @@ fn detect_stride(data: &[u8]) -> u32 {
     if total < 1000 {
         return 0;
     }
-    let (best_s, best_c) =
-        (2..=MAX_STRIDE).map(|s| (s, counts[s])).max_by_key(|&(_, c)| c).unwrap();
+    let (best_s, best_c) = (2..=MAX_STRIDE)
+        .map(|s| (s, counts[s]))
+        .max_by_key(|&(_, c)| c)
+        .unwrap();
     // Require a clear signal: >18% self-similarity and 1.5x the median level.
     let mut sorted: Vec<u32> = counts[2..].to_vec();
     sorted.sort_unstable();
@@ -342,7 +355,7 @@ struct Model {
     apm2: Apm,
     apm3: Apm,
     // ISSE chain: per-stage 2-weight mixers selected by bit-history state
-    isse_w: Vec<[i32; 2]>, // NCHAIN * 256
+    isse_w: Vec<[i32; 2]>,                        // NCHAIN * 256
     isse_cache: [(usize, i32, i32, i32); NCHAIN], // (weight idx, st_in, st_icm, p_out)
     // cached (model id, slot index) between predict and update
     active: usize,
@@ -362,7 +375,9 @@ impl Model {
         // slower once confident)
         let recip_slot: Vec<u32> = (0..96).map(|n| 65536 / (n as u32 + 2)).collect();
         // state-map rate: floors at ~1/512 so it keeps adapting
-        let recip_sm: Vec<u32> = (0..1024).map(|n| (65536 / (n as u32 + 2)).max(128)).collect();
+        let recip_sm: Vec<u32> = (0..1024)
+            .map(|n| (65536 / (n as u32 + 2)).max(128))
+            .collect();
         // state map init: probability implied by the state's counts
         let mut sm_init = vec![0u32; nstates];
         for (s, &(n0, n1)) in states.counts.iter().enumerate() {
@@ -376,7 +391,9 @@ impl Model {
             bpp: cfg.bpp as usize,
             o0: vec![0u32; 256],
             o1: vec![0u32; 1 << 16],
-            hashed: (0..NHASH).map(|_| vec![0u32; 1 << cfg.table_bits]).collect(),
+            hashed: (0..NHASH)
+                .map(|_| vec![0u32; 1 << cfg.table_bits])
+                .collect(),
             smaps: (0..NMODELS).map(|_| sm_init.clone()).collect(),
             match_tbl: vec![0u32; 1 << cfg.match_bits],
             match_bits: cfg.match_bits,
@@ -510,15 +527,17 @@ impl Model {
         let mut dot: i64 = 0;
         for ctx in [self.mixer_ctx, self.mixer_ctx2] {
             let w = &self.wx[ctx * NIN..ctx * NIN + NIN];
-            for i in 0..NIN {
-                dot += self.inputs[i] as i64 * w[i] as i64;
+            for (inp, wi) in self.inputs.iter().zip(w) {
+                dot += *inp as i64 * *wi as i64;
             }
         }
         self.pr_mix = squash((dot >> 16) as i32);
 
         let pr1 = self.apm1.pp(self.pr_mix, c0, &self.stretch);
         let p_blend1 = (self.pr_mix + pr1 * 3) >> 2;
-        let pr2 = self.apm2.pp(p_blend1, ((b1 << 8) | c0) & 0xffff, &self.stretch);
+        let pr2 = self
+            .apm2
+            .pp(p_blend1, ((b1 << 8) | c0) & 0xffff, &self.stretch);
         let p_blend2 = (p_blend1 + pr2 * 3) >> 2;
         // third stage keyed by the current word (text/tag structure)
         let wctx = ((splitmix(self.word_hash ^ (c0 as u64)) >> 50) & 0x3fff) as usize;
@@ -578,8 +597,8 @@ impl Model {
         let err = ((bit << 12) - self.pr_mix) as i64;
         for ctx in [self.mixer_ctx, self.mixer_ctx2] {
             let w = &mut self.wx[ctx * NIN..ctx * NIN + NIN];
-            for i in 0..NIN {
-                w[i] += ((self.inputs[i] as i64 * err) >> 14) as i32;
+            for (wi, inp) in w.iter_mut().zip(&self.inputs) {
+                *wi += ((*inp as i64 * err) >> 14) as i32;
             }
         }
         // apms
@@ -651,17 +670,26 @@ impl Model {
             if self.bpp > 0 {
                 // image mode: 2D neighborhood in the same color channel
                 let bpp = self.bpp;
-                let left = if cur >= bpp { self.buf[cur - bpp] as u64 } else { 0 };
-                let above_left =
-                    if cur >= s + bpp { self.buf[cur - s - bpp] as u64 } else { 0 };
-                let above_right =
-                    if s > bpp { self.buf[cur - s + bpp] as u64 } else { above };
+                let left = if cur >= bpp {
+                    self.buf[cur - bpp] as u64
+                } else {
+                    0
+                };
+                let above_left = if cur >= s + bpp {
+                    self.buf[cur - s - bpp] as u64
+                } else {
+                    0
+                };
+                let above_right = if s > bpp {
+                    self.buf[cur - s + bpp] as u64
+                } else {
+                    above
+                };
                 // neighbors + gradient context
                 self.hashes[9] = splitmix(above | (left << 8) | 0xAAAA_0000_0000_0000);
                 self.hashes[10] =
                     splitmix(above | (left << 8) | (above_left << 16) | 0xBBBB_0000_0000_0000);
-                let grad = (above as i64 + left as i64 - above_left as i64).clamp(-255, 510)
-                    as u64
+                let grad = (above as i64 + left as i64 - above_left as i64).clamp(-255, 510) as u64
                     & 0x3ff;
                 self.hashes[11] = splitmix(grad | (above_right << 10) | 0xCCCC_0000_0000_0000);
             } else {
@@ -685,7 +713,11 @@ struct Encoder {
 
 impl Encoder {
     fn new() -> Self {
-        Encoder { x1: 0, x2: 0xffff_ffff, out: Vec::new() }
+        Encoder {
+            x1: 0,
+            x2: 0xffff_ffff,
+            out: Vec::new(),
+        }
     }
 
     #[inline]
@@ -723,7 +755,13 @@ struct Decoder<'a> {
 
 impl<'a> Decoder<'a> {
     fn new(input: &'a [u8]) -> Self {
-        let mut d = Decoder { x1: 0, x2: 0xffff_ffff, x: 0, input, pos: 0 };
+        let mut d = Decoder {
+            x1: 0,
+            x2: 0xffff_ffff,
+            x: 0,
+            input,
+            pos: 0,
+        };
         for _ in 0..4 {
             d.x = (d.x << 8) | d.next_byte() as u32;
         }
@@ -767,8 +805,16 @@ pub fn compress(data: &[u8]) -> Result<Vec<u8>> {
 /// data), skipping autodetection when `stride_hint` > 0. `mem_cap` bounds
 /// model memory in bytes (the chosen size is recorded in the header, so
 /// decompression needs the same amount).
-pub fn compress_with_stride(data: &[u8], stride_hint: u32, bpp: u32, mem_cap: u64) -> Result<Vec<u8>> {
-    ensure!(data.len() < u32::MAX as usize - 16, "dzcm streams are limited to <4 GiB");
+pub fn compress_with_stride(
+    data: &[u8],
+    stride_hint: u32,
+    bpp: u32,
+    mem_cap: u64,
+) -> Result<Vec<u8>> {
+    ensure!(
+        data.len() < u32::MAX as usize - 16,
+        "dzcm streams are limited to <4 GiB"
+    );
     let mut cfg = CmConfig::for_len_capped(data.len(), mem_cap);
 
     let mut flags = 0u8;
@@ -781,7 +827,11 @@ pub fn compress_with_stride(data: &[u8], stride_hint: u32, bpp: u32, mem_cap: u6
     } else {
         data
     };
-    cfg.stride = if stride_hint > 0 { stride_hint } else { detect_stride(input) };
+    cfg.stride = if stride_hint > 0 {
+        stride_hint
+    } else {
+        detect_stride(input)
+    };
     cfg.bpp = if stride_hint > 0 { bpp } else { 0 };
 
     let mut header = vec![VERSION, cfg.table_bits as u8, cfg.match_bits as u8, flags];
@@ -812,8 +862,12 @@ pub fn decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
     if ver != VERSION {
         bail!("dzcm version mismatch: {}", ver);
     }
-    let mut cfg =
-        CmConfig { table_bits: r.byte()? as u32, match_bits: r.byte()? as u32, stride: 0, bpp: 0 };
+    let mut cfg = CmConfig {
+        table_bits: r.byte()? as u32,
+        match_bits: r.byte()? as u32,
+        stride: 0,
+        bpp: 0,
+    };
     let flags = r.byte()?;
     cfg.stride = r.varint()? as u32;
     cfg.bpp = r.varint()? as u32;
@@ -821,7 +875,12 @@ pub fn decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
     ensure!((16..=30).contains(&cfg.match_bits), "bad match bits");
     ensure!(cfg.stride <= 1 << 20 && cfg.bpp <= 16, "bad stride/bpp");
     let stored_len = r.varint()? as usize;
-    ensure!(stored_len == raw_len, "dzcm length mismatch: {} != {}", stored_len, raw_len);
+    ensure!(
+        stored_len == raw_len,
+        "dzcm length mismatch: {} != {}",
+        stored_len,
+        raw_len
+    );
     if raw_len == 0 {
         return Ok(Vec::new());
     }
@@ -873,7 +932,11 @@ mod tests {
     #[test]
     fn state_table_sane() {
         let st = build_states();
-        assert!(st.counts.len() <= 256, "too many states: {}", st.counts.len());
+        assert!(
+            st.counts.len() <= 256,
+            "too many states: {}",
+            st.counts.len()
+        );
         assert_eq!(st.counts[0], (0, 0));
         for s in 0..st.counts.len() {
             for b in 0..2 {
@@ -910,7 +973,11 @@ mod tests {
     fn repetitive_text() {
         let s = "the quick brown fox jumps over the lazy dog. ".repeat(2000);
         let comp = compress(s.as_bytes()).unwrap();
-        assert!(comp.len() < s.len() / 20, "repetitive text should crush: {}", comp.len());
+        assert!(
+            comp.len() < s.len() / 20,
+            "repetitive text should crush: {}",
+            comp.len()
+        );
         roundtrip(s.as_bytes());
     }
 

@@ -5,7 +5,11 @@ use clap::{Parser, Subcommand};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "dnz", version, about = "An archiver that beats gzip/7z on output size")]
+#[command(
+    name = "dnz",
+    version,
+    about = "An archiver that beats gzip/7z on output size"
+)]
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
@@ -61,13 +65,26 @@ enum Cmd {
 fn main() -> Result<()> {
     let cli = Cli::parse();
     match cli.cmd {
-        Cmd::A { archive, inputs, no_verify, no_cm, mem } => {
-            archive::pack(&archive, &inputs, !no_cm, !no_verify, mem)
-        }
-        Cmd::X { archive, out, overwrite } => archive::extract(&archive, &out, overwrite),
+        Cmd::A {
+            archive,
+            inputs,
+            no_verify,
+            no_cm,
+            mem,
+        } => archive::pack(&archive, &inputs, !no_cm, !no_verify, mem),
+        Cmd::X {
+            archive,
+            out,
+            overwrite,
+        } => archive::extract(&archive, &out, overwrite),
         Cmd::T { archive } => archive::test(&archive),
         Cmd::Ls { archive } => archive::list(&archive),
-        Cmd::Raw { file, backend, stride, bpp } => {
+        Cmd::Raw {
+            file,
+            backend,
+            stride,
+            bpp,
+        } => {
             use densezip::backends;
             let id = match backend.as_str() {
                 "store" => backends::STORE,

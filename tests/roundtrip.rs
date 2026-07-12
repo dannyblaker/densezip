@@ -38,7 +38,11 @@ fn roundtrip(dir: &Path, names: &[&str]) {
         .arg("--overwrite")
         .output()
         .expect("run densezip x");
-    assert!(out.status.success(), "extract failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "extract failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
 
     for n in names {
         let orig = fs::read(dir.join(n)).unwrap();
@@ -74,7 +78,11 @@ fn empty_and_tiny_files() {
 #[test]
 fn random_data_does_not_break() {
     let dir = tempfile::tempdir().unwrap();
-    fs::write(dir.path().join("rand.bin"), deterministic_bytes(1 << 20, 42)).unwrap();
+    fs::write(
+        dir.path().join("rand.bin"),
+        deterministic_bytes(1 << 20, 42),
+    )
+    .unwrap();
     roundtrip(dir.path(), &["rand.bin"]);
 }
 
@@ -90,8 +98,7 @@ fn text_file() {
 fn gzip_member_recompression() {
     let dir = tempfile::tempdir().unwrap();
     let payload = "some very compressible payload ".repeat(10_000);
-    let mut enc =
-        flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
+    let mut enc = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::best());
     enc.write_all(payload.as_bytes()).unwrap();
     fs::write(dir.path().join("file.gz"), enc.finish().unwrap()).unwrap();
     roundtrip(dir.path(), &["file.gz"]);
@@ -104,8 +111,7 @@ fn zlib_stream_recompression() {
         .iter()
         .map(|b| b % 16) // compressible-ish
         .collect::<Vec<u8>>();
-    let mut enc =
-        flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    let mut enc = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
     enc.write_all(&payload).unwrap();
     let z = enc.finish().unwrap();
     // Embed the zlib stream mid-file, surrounded by other bytes (PDF-style).
@@ -137,8 +143,7 @@ fn synth_png(w: u32, h: u32) -> Vec<u8> {
             scanlines.push(((x * 7 + y * 13) % 251) as u8);
         }
     }
-    let mut enc =
-        flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
+    let mut enc = flate2::write::ZlibEncoder::new(Vec::new(), flate2::Compression::default());
     enc.write_all(&scanlines).unwrap();
     let idat = enc.finish().unwrap();
 
@@ -176,7 +181,11 @@ fn directory_tree() {
         .arg("--no-cm")
         .output()
         .unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let xdir = dir.path().join("x");
     let out = Command::new(densezip())
         .arg("x")
@@ -185,7 +194,11 @@ fn directory_tree() {
         .arg(&xdir)
         .output()
         .unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     for rel in ["tree/a.txt", "tree/sub/b.bin", "tree/sub/deep/c"] {
         let orig = fs::read(dir.path().join(rel)).unwrap();
         let back = fs::read(xdir.join(rel)).unwrap();
@@ -198,16 +211,22 @@ fn archive_test_command() {
     let dir = tempfile::tempdir().unwrap();
     fs::write(dir.path().join("f"), deterministic_bytes(10_000, 9)).unwrap();
     let arch = dir.path().join("f.dnz");
-    assert!(Command::new(densezip())
-        .arg("a")
+    assert!(
+        Command::new(densezip())
+            .arg("a")
+            .arg(&arch)
+            .arg(dir.path().join("f"))
+            .arg("--no-cm")
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    let out = Command::new(densezip())
+        .arg("t")
         .arg(&arch)
-        .arg(dir.path().join("f"))
-        .arg("--no-cm")
         .output()
-        .unwrap()
-        .status
-        .success());
-    let out = Command::new(densezip()).arg("t").arg(&arch).output().unwrap();
+        .unwrap();
     assert!(out.status.success());
     assert!(String::from_utf8_lossy(&out.stdout).contains("OK"));
 }
@@ -215,7 +234,11 @@ fn archive_test_command() {
 #[test]
 fn unicode_filename() {
     let dir = tempfile::tempdir().unwrap();
-    fs::write(dir.path().join("héllo wörld — 你好.txt"), "unicode content".repeat(100)).unwrap();
+    fs::write(
+        dir.path().join("héllo wörld — 你好.txt"),
+        "unicode content".repeat(100),
+    )
+    .unwrap();
     roundtrip(dir.path(), &["héllo wörld — 你好.txt"]);
 }
 
@@ -225,16 +248,43 @@ fn many_small_files_solid() {
     let root = dir.path().join("many");
     fs::create_dir_all(&root).unwrap();
     for i in 0..200 {
-        fs::write(root.join(format!("f{:03}.txt", i)), format!("shared prefix content {}\n", i).repeat(20)).unwrap();
+        fs::write(
+            root.join(format!("f{:03}.txt", i)),
+            format!("shared prefix content {}\n", i).repeat(20),
+        )
+        .unwrap();
     }
     let arch = dir.path().join("many.dnz");
-    let out = Command::new(densezip()).arg("a").arg(&arch).arg(&root).arg("--no-cm").output().unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    let out = Command::new(densezip())
+        .arg("a")
+        .arg(&arch)
+        .arg(&root)
+        .arg("--no-cm")
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     let xdir = dir.path().join("x");
-    assert!(Command::new(densezip()).arg("x").arg(&arch).arg("-o").arg(&xdir).output().unwrap().status.success());
+    assert!(
+        Command::new(densezip())
+            .arg("x")
+            .arg(&arch)
+            .arg("-o")
+            .arg(&xdir)
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
     for i in 0..200 {
         let rel = format!("many/f{:03}.txt", i);
-        assert_eq!(fs::read(dir.path().join(&rel)).unwrap(), fs::read(xdir.join(&rel)).unwrap());
+        assert_eq!(
+            fs::read(dir.path().join(&rel)).unwrap(),
+            fs::read(xdir.join(&rel)).unwrap()
+        );
     }
 }
 
@@ -244,7 +294,17 @@ fn compressing_own_archive() {
     let dir = tempfile::tempdir().unwrap();
     fs::write(dir.path().join("data.txt"), "text ".repeat(10_000)).unwrap();
     let a1 = dir.path().join("inner.dnz");
-    assert!(Command::new(densezip()).arg("a").arg(&a1).arg(dir.path().join("data.txt")).arg("--no-cm").output().unwrap().status.success());
+    assert!(
+        Command::new(densezip())
+            .arg("a")
+            .arg(&a1)
+            .arg(dir.path().join("data.txt"))
+            .arg("--no-cm")
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
     let inner = fs::read(&a1).unwrap();
     fs::write(dir.path().join("inner.dnz.copy"), &inner).unwrap();
     roundtrip(dir.path(), &["inner.dnz.copy"]);
@@ -255,12 +315,30 @@ fn truncated_archive_fails_cleanly() {
     let dir = tempfile::tempdir().unwrap();
     fs::write(dir.path().join("f.txt"), "hello ".repeat(5000)).unwrap();
     let arch = dir.path().join("t.dnz");
-    assert!(Command::new(densezip()).arg("a").arg(&arch).arg(dir.path().join("f.txt")).arg("--no-cm").output().unwrap().status.success());
+    assert!(
+        Command::new(densezip())
+            .arg("a")
+            .arg(&arch)
+            .arg(dir.path().join("f.txt"))
+            .arg("--no-cm")
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
     let data = fs::read(&arch).unwrap();
     for cut in [data.len() / 2, data.len() - 5, 10] {
         fs::write(&arch, &data[..cut]).unwrap();
-        let out = Command::new(densezip()).arg("t").arg(&arch).output().unwrap();
-        assert!(!out.status.success(), "truncated archive (cut={}) must fail", cut);
+        let out = Command::new(densezip())
+            .arg("t")
+            .arg(&arch)
+            .output()
+            .unwrap();
+        assert!(
+            !out.status.success(),
+            "truncated archive (cut={}) must fail",
+            cut
+        );
     }
 }
 
@@ -269,13 +347,30 @@ fn corrupted_archive_fails_cleanly() {
     let dir = tempfile::tempdir().unwrap();
     fs::write(dir.path().join("f.txt"), "hello ".repeat(5000)).unwrap();
     let arch = dir.path().join("t.dnz");
-    assert!(Command::new(densezip()).arg("a").arg(&arch).arg(dir.path().join("f.txt")).arg("--no-cm").output().unwrap().status.success());
+    assert!(
+        Command::new(densezip())
+            .arg("a")
+            .arg(&arch)
+            .arg(dir.path().join("f.txt"))
+            .arg("--no-cm")
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
     let mut data = fs::read(&arch).unwrap();
     let mid = data.len() / 2;
     data[mid] ^= 0xff; // flip bits in the middle (payload or TOC)
     fs::write(&arch, &data).unwrap();
-    let out = Command::new(densezip()).arg("t").arg(&arch).output().unwrap();
-    assert!(!out.status.success(), "corrupted archive must fail verification");
+    let out = Command::new(densezip())
+        .arg("t")
+        .arg(&arch)
+        .output()
+        .unwrap();
+    assert!(
+        !out.status.success(),
+        "corrupted archive must fail verification"
+    );
 }
 
 #[test]
@@ -295,9 +390,26 @@ fn memory_budget_mode() {
         .args(["--mem", "1"])
         .output()
         .unwrap();
-    assert!(out.status.success(), "{}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     assert!(String::from_utf8_lossy(&out.stderr).contains("memory budget"));
     let xdir = dir.path().join("x");
-    assert!(Command::new(densezip()).arg("x").arg(&arch).arg("-o").arg(&xdir).output().unwrap().status.success());
-    assert_eq!(fs::read(dir.path().join("big.txt")).unwrap(), fs::read(xdir.join("big.txt")).unwrap());
+    assert!(
+        Command::new(densezip())
+            .arg("x")
+            .arg(&arch)
+            .arg("-o")
+            .arg(&xdir)
+            .output()
+            .unwrap()
+            .status
+            .success()
+    );
+    assert_eq!(
+        fs::read(dir.path().join("big.txt")).unwrap(),
+        fs::read(xdir.join("big.txt")).unwrap()
+    );
 }

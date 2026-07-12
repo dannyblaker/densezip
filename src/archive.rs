@@ -10,11 +10,11 @@
 
 use crate::backends;
 use crate::channels::{Channels, Cursors, PixelBlob};
-use crate::plan::{read_segs, remap_blobs, write_segs, Seg};
+use crate::plan::{Seg, read_segs, remap_blobs, write_segs};
 use crate::rebuild::render_segs;
 use crate::scan::plan_bytes;
-use crate::util::{human, write_varint, xxh3, Reader};
-use anyhow::{bail, ensure, Context, Result};
+use crate::util::{Reader, human, write_varint, xxh3};
+use anyhow::{Context, Result, bail, ensure};
 use rayon::prelude::*;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -53,7 +53,10 @@ fn collect_inputs(inputs: &[PathBuf]) -> Result<Vec<(PathBuf, String, bool)>> {
         let input = input
             .canonicalize()
             .with_context(|| format!("cannot access {}", input.display()))?;
-        let base = input.parent().map(Path::to_path_buf).unwrap_or_else(|| input.clone());
+        let base = input
+            .parent()
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| input.clone());
         let mut stack = vec![input.clone()];
         while let Some(p) = stack.pop() {
             let rel = p
@@ -105,12 +108,24 @@ fn plan_file(abs: &Path, rel: &str, is_dir: bool) -> Result<PlannedFile> {
         render_segs(&segs, &mut cur, &mut rendered).is_ok() && rendered == data
     };
     if !ok {
-        eprintln!("warning: transform verification failed for {}, storing raw", rel);
+        eprintln!(
+            "warning: transform verification failed for {}, storing raw",
+            rel
+        );
         delta = Channels::default();
         delta.plain.extend_from_slice(&data);
-        segs = vec![Seg::Raw { len: data.len() as u64 }];
+        segs = vec![Seg::Raw {
+            len: data.len() as u64,
+        }];
     }
-    Ok(PlannedFile { path: rel.to_string(), is_dir: false, size: data.len() as u64, hash, segs, delta })
+    Ok(PlannedFile {
+        path: rel.to_string(),
+        is_dir: false,
+        size: data.len() as u64,
+        hash,
+        segs,
+        delta,
+    })
 }
 
 pub fn pack(
@@ -176,11 +191,17 @@ pub fn pack(
     let held: u64 = jobs.iter().map(|(d, ..)| d.len() as u64).sum();
     let usable = budget_bytes.saturating_sub(held * 2).max(budget_bytes / 4);
     let concurrent = ((usable >> 32).max(1) as usize).min(jobs.len().max(1));
-    let per_job = backends::MemBudget { bytes: usable / concurrent as u64 };
+    let per_job = backends::MemBudget {
+        bytes: usable / concurrent as u64,
+    };
     eprintln!(
         "memory budget: {} ({}) -> {} concurrent job(s), {} each",
         human(budget_bytes),
-        if mem_gib.is_some() { "--mem" } else { "auto-detected" },
+        if mem_gib.is_some() {
+            "--mem"
+        } else {
+            "auto-detected"
+        },
         concurrent,
         human(per_job.bytes)
     );
@@ -188,17 +209,24 @@ pub fn pack(
     // (backend, payload, pixel transform)
     let mut payloads: Vec<(u8, Vec<u8>, u8)> = Vec::with_capacity(jobs.len());
     for batch in jobs.chunks(concurrent) {
-        payloads.extend(batch.par_iter().map(|(data, cm, stride, bpp, is_pixels)| {
-            let (id, comp) = backends::compress_best_hint(data, *cm, *stride, *bpp, per_job);
-            if *is_pixels && (*bpp == 3 || *bpp == 4) {
-                let alt = crate::channels::sub_green(data, *bpp as usize, true);
-                let (id2, comp2) = backends::compress_best_hint(&alt, *cm, *stride, *bpp, per_job);
-                if comp2.len() < comp.len() {
-                    return (id2, comp2, crate::channels::PIXEL_SUB_GREEN);
-                }
-            }
-            (id, comp, crate::channels::PIXEL_IDENTITY)
-        }).collect::<Vec<_>>());
+        payloads.extend(
+            batch
+                .par_iter()
+                .map(|(data, cm, stride, bpp, is_pixels)| {
+                    let (id, comp) =
+                        backends::compress_best_hint(data, *cm, *stride, *bpp, per_job);
+                    if *is_pixels && (*bpp == 3 || *bpp == 4) {
+                        let alt = crate::channels::sub_green(data, *bpp as usize, true);
+                        let (id2, comp2) =
+                            backends::compress_best_hint(&alt, *cm, *stride, *bpp, per_job);
+                        if comp2.len() < comp.len() {
+                            return (id2, comp2, crate::channels::PIXEL_SUB_GREEN);
+                        }
+                    }
+                    (id, comp, crate::channels::PIXEL_IDENTITY)
+                })
+                .collect::<Vec<_>>(),
+        );
     }
 
     // Serialize TOC.
@@ -248,8 +276,7 @@ pub fn pack(
     out.extend_from_slice(&toc_offset.to_le_bytes());
     out.extend_from_slice(&(toc_comp.len() as u64).to_le_bytes());
     out.extend_from_slice(END_MAGIC);
-    fs::write(archive_path, &out)
-        .with_context(|| format!("writing {}", archive_path.display()))?;
+    fs::write(archive_path, &out).with_context(|| format!("writing {}", archive_path.display()))?;
 
     let total_in: u64 = entries.iter().map(|e| e.size).sum();
     println!(
@@ -301,13 +328,22 @@ pub fn pack(
 
 pub fn read_archive(path: &Path) -> Result<Archive> {
     let data = fs::read(path).with_context(|| format!("reading {}", path.display()))?;
-    ensure!(data.len() >= 32 && &data[..8] == MAGIC, "not a densezip archive");
-    ensure!(&data[data.len() - 8..] == END_MAGIC, "archive trailer missing/corrupt");
+    ensure!(
+        data.len() >= 32 && &data[..8] == MAGIC,
+        "not a densezip archive"
+    );
+    ensure!(
+        &data[data.len() - 8..] == END_MAGIC,
+        "archive trailer missing/corrupt"
+    );
     let toc_offset =
         u64::from_le_bytes(data[data.len() - 24..data.len() - 16].try_into().unwrap()) as usize;
     let toc_comp_len =
         u64::from_le_bytes(data[data.len() - 16..data.len() - 8].try_into().unwrap()) as usize;
-    ensure!(toc_offset + toc_comp_len <= data.len() - 24, "bad TOC location");
+    ensure!(
+        toc_offset + toc_comp_len <= data.len() - 24,
+        "bad TOC location"
+    );
     let toc = zstd::stream::decode_all(&data[toc_offset..toc_offset + toc_comp_len])?;
 
     let mut r = Reader::new(&toc);
@@ -320,12 +356,24 @@ pub fn read_archive(path: &Path) -> Result<Archive> {
         let plen = r.varint()? as usize;
         let path = String::from_utf8(r.bytes(plen)?.to_vec()).context("bad path encoding")?;
         if is_dir {
-            entries.push(Entry { path, is_dir, size: 0, hash: 0, segs: Vec::new() });
+            entries.push(Entry {
+                path,
+                is_dir,
+                size: 0,
+                hash: 0,
+                segs: Vec::new(),
+            });
         } else {
             let size = r.varint()?;
             let hash = u64::from_le_bytes(r.bytes(8)?.try_into().unwrap());
             let segs = read_segs(&mut r)?;
-            entries.push(Entry { path, is_dir, size, hash, segs });
+            entries.push(Entry {
+                path,
+                is_dir,
+                size,
+                hash,
+                segs,
+            });
         }
     }
     let n_blobs = r.varint()? as usize;
@@ -381,14 +429,20 @@ pub fn read_archive(path: &Path) -> Result<Archive> {
             })
             .collect(),
     };
-    Ok(Archive { entries, channels, channel_info: infos })
+    Ok(Archive {
+        entries,
+        channels,
+        channel_info: infos,
+    })
 }
 
 fn safe_join(out_dir: &Path, rel: &str) -> Result<PathBuf> {
     let p = Path::new(rel);
     ensure!(
         !p.is_absolute()
-            && !p.components().any(|c| matches!(c, std::path::Component::ParentDir)),
+            && !p
+                .components()
+                .any(|c| matches!(c, std::path::Component::ParentDir)),
         "unsafe path in archive: {}",
         rel
     );

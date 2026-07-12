@@ -3,7 +3,7 @@
 use crate::channels::Cursors;
 use crate::plan::{DeflateSeg, PixelEnc, PngIdatSeg, Seg};
 use crate::util::adler32;
-use anyhow::{ensure, Context, Result};
+use anyhow::{Context, Result, ensure};
 use preflate_rs::recreate_whole_deflate_stream;
 
 pub fn render_segs(segs: &[Seg], cur: &mut Cursors, out: &mut Vec<u8>) -> Result<()> {
@@ -53,7 +53,10 @@ fn render_seg(seg: &Seg, cur: &mut Cursors, out: &mut Vec<u8>) -> Result<()> {
             out.extend_from_slice(&(plain.len() as u32).to_le_bytes());
         }
         Seg::PngIdat(p) => render_png(p, cur, out)?,
-        Seg::Jpeg { lepton_len, orig_len } => {
+        Seg::Jpeg {
+            lepton_len,
+            orig_len,
+        } => {
             let blob = cur.take_lepton(*lepton_len as usize)?;
             let mut jpeg = Vec::with_capacity(*orig_len as usize);
             lepton_jpeg::decode_lepton(
@@ -63,7 +66,10 @@ fn render_seg(seg: &Seg, cur: &mut Cursors, out: &mut Vec<u8>) -> Result<()> {
                 &lepton_jpeg::SingleThreadPool {},
             )
             .map_err(|e| anyhow::anyhow!("lepton decode failed: {:?}", e))?;
-            ensure!(jpeg.len() as u64 == *orig_len, "lepton output length mismatch");
+            ensure!(
+                jpeg.len() as u64 == *orig_len,
+                "lepton output length mismatch"
+            );
             out.extend_from_slice(&jpeg);
         }
     }
@@ -82,7 +88,10 @@ fn render_png(p: &PngIdatSeg, cur: &mut Cursors, out: &mut Vec<u8>) -> Result<()
             refilter(p, &filters, blob)?
         }
     };
-    ensure!(plain.len() as u64 == p.plain_len, "png plain length mismatch");
+    ensure!(
+        plain.len() as u64 == p.plain_len,
+        "png plain length mismatch"
+    );
 
     // 2. zlib stream.
     let corrections = cur.take_corrections(p.corrections_len as usize)?.to_vec();
@@ -96,7 +105,10 @@ fn render_png(p: &PngIdatSeg, cur: &mut Cursors, out: &mut Vec<u8>) -> Result<()
 
     // 3. Re-emit IDAT chunk framing.
     let total: u64 = p.chunk_lens.iter().map(|&l| l as u64).sum();
-    ensure!(total == zlib.len() as u64, "png chunk lengths mismatch zlib size");
+    ensure!(
+        total == zlib.len() as u64,
+        "png chunk lengths mismatch zlib size"
+    );
     let mut off = 0usize;
     for &l in &p.chunk_lens {
         let l = l as usize;
@@ -114,9 +126,11 @@ fn render_png(p: &PngIdatSeg, cur: &mut Cursors, out: &mut Vec<u8>) -> Result<()
 impl PngIdatSeg {
     fn ch_blob<'a>(&self, cur: &Cursors<'a>) -> Option<&'a [u8]> {
         match self.pixels {
-            PixelEnc::Unfiltered { blob } => {
-                cur.ch.pixel_blobs.get(blob as usize).map(|b| b.data.as_slice())
-            }
+            PixelEnc::Unfiltered { blob } => cur
+                .ch
+                .pixel_blobs
+                .get(blob as usize)
+                .map(|b| b.data.as_slice()),
             PixelEnc::Filtered => None,
         }
     }
@@ -150,7 +164,11 @@ pub fn refilter(p: &PngIdatSeg, filters: &[u8], pixels: &[u8]) -> Result<Vec<u8>
         let ft = filters[y];
         out.push(ft);
         let row = &pixels[y * stride..(y + 1) * stride];
-        let prev: &[u8] = if y == 0 { &zero_row } else { &pixels[(y - 1) * stride..y * stride] };
+        let prev: &[u8] = if y == 0 {
+            &zero_row
+        } else {
+            &pixels[(y - 1) * stride..y * stride]
+        };
         match ft {
             0 => out.extend_from_slice(row),
             1 => {
@@ -205,7 +223,11 @@ pub fn unfilter(p: &PngIdatSeg, plain: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
         let (prev_rows, rest) = pixels.split_at_mut(y * stride);
         let row = &mut rest[..stride];
         let zero_row = vec![0u8; stride];
-        let prev: &[u8] = if y == 0 { &zero_row } else { &prev_rows[(y - 1) * stride..] };
+        let prev: &[u8] = if y == 0 {
+            &zero_row
+        } else {
+            &prev_rows[(y - 1) * stride..]
+        };
         match ft {
             0 => row.copy_from_slice(src),
             1 => {

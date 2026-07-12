@@ -1,7 +1,7 @@
 //! Compression backends. Every channel is compressed with all applicable
 //! backends in parallel and the smallest verified output wins.
 
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use lzma_rust2::{LzmaOptions, LzmaReader, LzmaWriter};
 use rayon::prelude::*;
 use std::io::{Read, Write};
@@ -34,17 +34,27 @@ impl MemBudget {
     pub const UNLIMITED: MemBudget = MemBudget { bytes: u64::MAX };
 
     pub fn cm_cap(&self) -> u64 {
-        if self.bytes == u64::MAX { u64::MAX } else { self.bytes / 2 }
+        if self.bytes == u64::MAX {
+            u64::MAX
+        } else {
+            self.bytes / 2
+        }
     }
 
     pub fn lzma_dict_cap(&self) -> u64 {
-        if self.bytes == u64::MAX { 1 << 30 } else { (self.bytes / 24).max(1 << 20) }
+        if self.bytes == u64::MAX {
+            1 << 30
+        } else {
+            (self.bytes / 24).max(1 << 20)
+        }
     }
 }
 
 fn lzma_options(len: usize, dict_cap: u64) -> LzmaOptions {
     let mut opts = LzmaOptions::with_preset(9);
-    let dict = (len.max(1 << 16).next_power_of_two() as u64).min(1 << 30).min(dict_cap) as u32;
+    let dict = (len.max(1 << 16).next_power_of_two() as u64)
+        .min(1 << 30)
+        .min(dict_cap) as u32;
     opts.dict_size = dict;
     opts.nice_len = 273;
     opts
@@ -79,7 +89,9 @@ fn lzma_decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
 
 fn zstd_compress(data: &[u8]) -> Result<Vec<u8>> {
     let mut enc = zstd::stream::write::Encoder::new(Vec::new(), 22)?;
-    enc.set_parameter(zstd::zstd_safe::CParameter::EnableLongDistanceMatching(true))?;
+    enc.set_parameter(zstd::zstd_safe::CParameter::EnableLongDistanceMatching(
+        true,
+    ))?;
     enc.set_parameter(zstd::zstd_safe::CParameter::WindowLog(27))?;
     enc.write_all(data)?;
     Ok(enc.finish()?)
@@ -112,7 +124,13 @@ fn brotli_decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
 }
 
 /// Compress with one backend id.
-fn compress_one_hint(id: u8, data: &[u8], stride: u32, bpp: u32, mem: MemBudget) -> Result<Vec<u8>> {
+fn compress_one_hint(
+    id: u8,
+    data: &[u8],
+    stride: u32,
+    bpp: u32,
+    mem: MemBudget,
+) -> Result<Vec<u8>> {
     match id {
         STORE => Ok(data.to_vec()),
         ZSTD => zstd_compress(data),
@@ -138,7 +156,12 @@ pub fn decompress(id: u8, comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
         _ => bail!("unknown backend {}", id),
     };
     if out.len() != raw_len {
-        bail!("backend {} produced {} bytes, expected {}", name(id), out.len(), raw_len);
+        bail!(
+            "backend {} produced {} bytes, expected {}",
+            name(id),
+            out.len(),
+            raw_len
+        );
     }
     Ok(out)
 }
@@ -171,11 +194,7 @@ pub fn compress_best_hint(
             let comp = compress_one_hint(id, data, stride, bpp, mem).ok()?;
             // Trust nothing: verify the round trip before accepting.
             let back = decompress(id, &comp, data.len()).ok()?;
-            if back == data {
-                Some((id, comp))
-            } else {
-                None
-            }
+            if back == data { Some((id, comp)) } else { None }
         })
         .min_by_key(|(_, c)| c.len());
     match best {

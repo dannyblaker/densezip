@@ -2,6 +2,12 @@
 name = "densezip"
 version = "0.1.0"
 edition = "2024"
+description = "An archiver tuned for the smallest possible output: recompression of deflate/JPEG containers, a context-mixing compressor, and per-stream backend racing"
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/dannyblaker/densezip"
+readme = "README.md"
+keywords = ["compression", "archive", "context-mixing", "recompression"]
+categories = ["compression", "command-line-utilities"]
 
 [dependencies]
 anyhow = "1.0.103"

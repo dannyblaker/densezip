@@ -86,11 +86,20 @@ pub struct Cursors<'a> {
 
 impl<'a> Cursors<'a> {
     pub fn new(ch: &'a Channels) -> Self {
-        Cursors { ch, plain: 0, corrections: 0, filters: 0, lepton: 0 }
+        Cursors {
+            ch,
+            plain: 0,
+            corrections: 0,
+            filters: 0,
+            lepton: 0,
+        }
     }
 
     pub fn take_plain(&mut self, n: usize) -> anyhow::Result<&'a [u8]> {
-        anyhow::ensure!(self.plain + n <= self.ch.plain.len(), "plain channel underrun");
+        anyhow::ensure!(
+            self.plain + n <= self.ch.plain.len(),
+            "plain channel underrun"
+        );
         let s = &self.ch.plain[self.plain..self.plain + n];
         self.plain += n;
         Ok(s)
@@ -107,14 +116,20 @@ impl<'a> Cursors<'a> {
     }
 
     pub fn take_filters(&mut self, n: usize) -> anyhow::Result<&'a [u8]> {
-        anyhow::ensure!(self.filters + n <= self.ch.filters.len(), "filters channel underrun");
+        anyhow::ensure!(
+            self.filters + n <= self.ch.filters.len(),
+            "filters channel underrun"
+        );
         let s = &self.ch.filters[self.filters..self.filters + n];
         self.filters += n;
         Ok(s)
     }
 
     pub fn take_lepton(&mut self, n: usize) -> anyhow::Result<&'a [u8]> {
-        anyhow::ensure!(self.lepton + n <= self.ch.lepton.len(), "lepton channel underrun");
+        anyhow::ensure!(
+            self.lepton + n <= self.ch.lepton.len(),
+            "lepton channel underrun"
+        );
         let s = &self.ch.lepton[self.lepton..self.lepton + n];
         self.lepton += n;
         Ok(s)
