@@ -238,16 +238,28 @@ pub fn pack(
             batch
                 .par_iter()
                 .map(|(data, cm, stride, bpp, is_pixels)| {
+                    if *is_pixels && (*bpp == 3 || *bpp == 4) {
+                        // Race identity vs sub-green concurrently. Both hold
+                        // a full backend race at once, so each gets half the
+                        // job's budget.
+                        let half = backends::MemBudget {
+                            bytes: per_job.bytes / 2,
+                        };
+                        let ((id, comp), (id2, comp2)) = rayon::join(
+                            || backends::compress_best_hint(data, *cm, *stride, *bpp, half),
+                            || {
+                                let alt = crate::channels::sub_green(data, *bpp as usize, true);
+                                backends::compress_best_hint(&alt, *cm, *stride, *bpp, half)
+                            },
+                        );
+                        return if comp2.len() < comp.len() {
+                            (id2, comp2, crate::channels::PIXEL_SUB_GREEN)
+                        } else {
+                            (id, comp, crate::channels::PIXEL_IDENTITY)
+                        };
+                    }
                     let (id, comp) =
                         backends::compress_best_hint(data, *cm, *stride, *bpp, per_job);
-                    if *is_pixels && (*bpp == 3 || *bpp == 4) {
-                        let alt = crate::channels::sub_green(data, *bpp as usize, true);
-                        let (id2, comp2) =
-                            backends::compress_best_hint(&alt, *cm, *stride, *bpp, per_job);
-                        if comp2.len() < comp.len() {
-                            return (id2, comp2, crate::channels::PIXEL_SUB_GREEN);
-                        }
-                    }
                     (id, comp, crate::channels::PIXEL_IDENTITY)
                 })
                 .collect::<Vec<_>>(),

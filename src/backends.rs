@@ -50,12 +50,15 @@ impl MemBudget {
     }
 }
 
+fn lzma_dict_size(len: usize, dict_cap: u64) -> u32 {
+    (len.max(1 << 16).next_power_of_two() as u64)
+        .min(1 << 30)
+        .min(dict_cap) as u32
+}
+
 fn lzma_options(len: usize, dict_cap: u64) -> LzmaOptions {
     let mut opts = LzmaOptions::with_preset(9);
-    let dict = (len.max(1 << 16).next_power_of_two() as u64)
-        .min(1 << 30)
-        .min(dict_cap) as u32;
-    opts.dict_size = dict;
+    opts.dict_size = lzma_dict_size(len, dict_cap);
     opts.nice_len = 273;
     opts
 }
@@ -63,9 +66,10 @@ fn lzma_options(len: usize, dict_cap: u64) -> LzmaOptions {
 /// The .lzma header is self-describing (props + dict size), so multiple
 /// parameter sets can race under the same backend id. pb=0 often wins on
 /// text; lc=0,pb=0 on some binary/record data.
-fn lzma_compress(data: &[u8], dict_cap: u64) -> Result<Vec<u8>> {
-    let mut best: Option<Vec<u8>> = None;
-    for (lc, lp, pb) in [(3, 0, 2), (3, 0, 0), (0, 0, 0)] {
+fn lzma_compress(data: &[u8], mem: MemBudget) -> Result<Vec<u8>> {
+    let dict_cap = mem.lzma_dict_cap();
+    let variants: [(u32, u32, u32); 3] = [(3, 0, 2), (3, 0, 0), (0, 0, 0)];
+    let encode = |(lc, lp, pb): (u32, u32, u32)| -> Result<Vec<u8>> {
         let mut opts = lzma_options(data.len(), dict_cap);
         opts.lc = lc;
         opts.lp = lp;
@@ -74,11 +78,22 @@ fn lzma_compress(data: &[u8], dict_cap: u64) -> Result<Vec<u8>> {
         w.write_all(data)?;
         let out = w.finish()?;
         crate::progress::add(data.len() as u64 * crate::progress::W_LZMA);
-        if best.as_ref().is_none_or(|b| out.len() < b.len()) {
-            best = Some(out);
-        }
-    }
-    Ok(best.unwrap())
+        Ok(out)
+    };
+    // Each encoder needs ~10.5x its dict; overlap the variants only when
+    // three of them still fit inside the job's budget (dict size is the
+    // same either way, so the output never depends on this choice).
+    let dict = lzma_dict_size(data.len(), dict_cap) as u64;
+    let outs: Vec<Vec<u8>> = if dict * 64 <= mem.bytes {
+        variants
+            .into_par_iter()
+            .map(encode)
+            .collect::<Result<_>>()?
+    } else {
+        variants.into_iter().map(encode).collect::<Result<_>>()?
+    };
+    // First variant wins ties, matching the old sequential loop.
+    Ok(outs.into_iter().min_by_key(|o| o.len()).unwrap())
 }
 
 fn lzma_decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
@@ -139,7 +154,7 @@ fn compress_one_hint(
         STORE => Ok(data.to_vec()),
         ZSTD => zstd_compress(data),
         BROTLI => brotli_compress(data),
-        LZMA => lzma_compress(data, mem.lzma_dict_cap()),
+        LZMA => lzma_compress(data, mem),
         CM => crate::cm::compress_with_stride(data, stride, bpp, mem.cm_cap()),
         _ => bail!("unknown backend {}", id),
     }
