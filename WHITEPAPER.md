@@ -475,10 +475,11 @@ overhead). Jobs run in batches of $k$ via a work-stealing pool.
 
 ```mermaid
 flowchart LR
-    subgraph dnz [".dnz layout"]
-        direction LR
-        MAGIC["magic"] --> P0["channel payload 0<br/>(plain)"] --> P1["…"] --> PN["channel payload N<br/>(pixel blobs)"] --> TOC["TOC (zstd-19)"] --> FOOT["toc_offset u64<br/>toc_len u64<br/>end magic"]
-    end
+    MAGIC["magic"] --> P0["channel payload 0<br/>(plain)"]
+    P0 --> P1["…"]
+    P1 --> PN["channel payload N<br/>(pixel blobs)"]
+    PN --> TOC["TOC (zstd-19)"]
+    TOC --> FOOT["toc_offset u64<br/>toc_len u64<br/>end magic"]
 ```
 
 The TOC stores, per entry: path, size, xxh3-64 hash, and the serialized
