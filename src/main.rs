@@ -1,3 +1,5 @@
+mod update;
+
 use densezip::archive;
 
 use anyhow::Result;
@@ -46,6 +48,12 @@ enum Cmd {
     T { archive: PathBuf },
     /// List archive contents
     Ls { archive: PathBuf },
+    /// Update dnz to the latest release
+    Update {
+        /// Reinstall even if already on the latest version
+        #[arg(long)]
+        force: bool,
+    },
     /// (dev) Compress one file with a single backend, report size, verify roundtrip
     #[command(hide = true)]
     Raw {
@@ -79,6 +87,7 @@ fn main() -> Result<()> {
         } => archive::extract(&archive, &out, overwrite),
         Cmd::T { archive } => archive::test(&archive),
         Cmd::Ls { archive } => archive::list(&archive),
+        Cmd::Update { force } => update::update(force),
         Cmd::Raw {
             file,
             backend,

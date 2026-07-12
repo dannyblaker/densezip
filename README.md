@@ -23,8 +23,29 @@ irm https://raw.githubusercontent.com/dannyblaker/densezip/master/install.ps1 | 
 ```
 
 Both install the latest stable release (prebuilt for Linux x86_64/arm64,
-macOS Intel/Apple Silicon, and Windows x86_64) and can be re-run any time to
-update. Or build from source with Rust stable: `cargo build --release`.
+macOS Intel/Apple Silicon, and Windows x86_64). Or build from source with
+Rust stable: `cargo build --release`.
+
+### Updating
+
+```sh
+dnz update
+```
+
+This checks GitHub for the latest release and, if you're behind, replaces the
+installed binary in place (`--force` reinstalls even when already current).
+Re-running the install one-liner above does the same thing. If you built from
+source, update with `git pull && cargo build --release` instead — `dnz update`
+detects source builds and won't overwrite them.
+
+To pin or roll back to a specific version, pass a tag to the installer:
+
+```sh
+DNZ_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/dannyblaker/densezip/master/install.sh | bash
+```
+
+(on Windows: `$env:DNZ_VERSION="v0.1.0"` before running the PowerShell
+one-liner). Check what you have with `dnz --version`.
 
 ## Usage
 
