@@ -17,9 +17,9 @@ Let $F$ be an input file (or file set) and $A$ a compressor. Conventional
 compressors optimize a ratio/speed trade-off. densezip solves the degenerate
 but practically interesting corner of that space:
 
-$$
+```math
 \min_{A} \; |A(F)| \quad \text{subject to} \quad A^{-1}(A(F)) = F \;\text{(bit-exact)},
-$$
+```
 
 with **no constraint on CPU time or memory** beyond what a commodity machine
 can supply. This objective changes the engineering calculus in three ways:
@@ -36,9 +36,9 @@ $-\log_2 p(x)$ bits on a symbol the model assigns probability $p(x)$, so the
 expected output size for data drawn from source distribution $P$ under model
 $Q$ is the cross-entropy
 
-$$
+```math
 H(P, Q) \;=\; -\sum_{x} P(x)\,\log_2 Q(x) \;=\; H(P) + D_{\mathrm{KL}}(P \,\|\, Q).
-$$
+```
 
 Every densezip design decision is an attack on one of the two terms: the
 recompression layer shrinks $H(P)$ by transforming the data into a
@@ -93,9 +93,9 @@ DEFLATE encoders differ in match selection, block splitting, and Huffman
 table construction. densezip uses [preflate](https://github.com/microsoft/preflate-rs),
 which decomposes a deflate stream $D$ into
 
-$$
+```math
 D \;\longmapsto\; (P, C), \qquad \text{recreate}(P, C) = D,
-$$
+```
 
 where $P$ is the decompressed plain text and $C$ is a small **correction
 record** capturing the original encoder's choices. For streams produced by
@@ -103,9 +103,9 @@ common zlib-family encoders, $|C| \ll |D|$ (typically well under 1% of
 $|D|$). The net gain condition for recompressing a stream with backend
 $\beta$ is
 
-$$
+```math
 |\beta(P)| + |C| \;<\; |D|,
-$$
+```
 
 which holds by a wide margin in practice: text extracted from a PDF
 compresses ~2× smaller through dzcm than its original FlateDecode stream.
@@ -140,10 +140,10 @@ PNG scanlines are stored filtered: each row is transformed by one of five
 per-row filters (None, Sub, Up, Average, Paeth) applied to pixel bytes,
 e.g. for filter type 4:
 
-$$
+```math
 \mathrm{filtered}[i] = \mathrm{raw}[i] - \mathrm{Paeth}\big(a, b, c\big), \qquad
 \mathrm{Paeth}(a,b,c) = \underset{v \in \{a,b,c\}}{\arg\min} \; |a + b - c - v|,
-$$
+```
 
 where $a$, $b$, $c$ are the left, above, and above-left neighbors. Filtering
 helps DEFLATE (it converts smooth gradients into near-zero residuals) but
@@ -160,9 +160,9 @@ actually helps.
 RGB channels are strongly correlated; green carries most luminance. For
 RGB(A) pixel blobs, densezip races an additional representation
 
-$$
+```math
 (R, G, B, A) \;\longmapsto\; (R - G,\; G,\; B - G,\; A) \pmod{256},
-$$
+```
 
 the reversible sub-green transform (as in WebP lossless). Whichever
 representation compresses smaller wins.
@@ -175,9 +175,9 @@ input looks like x86 (call-site density heuristic: plausible E8/E9 sites
 more than ~1 per 1.5 KB), each displacement at offset $i$ is rewritten to an
 absolute target
 
-$$
+```math
 \mathrm{abs} = \mathrm{rel} + i + 5 \pmod{2^{32}},
-$$
+```
 
 stored big-endian so high bytes cluster. Both directions scan identically
 and skip 5 bytes after each hit, making the transform exactly reversible
@@ -188,9 +188,9 @@ without correction data.
 Tabular data (database pages, fixed-size structs, sensor logs) has a
 periodic layout. densezip estimates the period by sampled autocorrelation:
 
-$$
-s^\* = \underset{2 \le s \le 4096}{\arg\max} \;\; \Pr\big[\,\mathrm{buf}[i] = \mathrm{buf}[i - s]\,\big],
-$$
+```math
+s^{*} = \underset{2 \le s \le 4096}{\arg\max} \;\; \Pr\big[\,\mathrm{buf}[i] = \mathrm{buf}[i - s]\,\big],
+```
 
 sampling every 37th position over a 2 MiB window. The stride is accepted
 only on a clear signal (match rate ≥ 18% and ≥ 1.5× the median over all
@@ -237,13 +237,13 @@ flowchart LR
 ### 5.2 Arithmetic coding
 
 A binary range coder maintains an interval $[x_1, x_2] \subseteq [0, 2^{32})$
-and splits it at $x_{\mathrm{mid}} = x_1 + \lfloor (x_2 - x_1)\, p / 2^{12} \rfloor$
+and splits it at $x_{\mathrm{mid}} = x_1 + \lfloor (x_2 - x_1) \cdot p / 2^{12} \rfloor$
 for each predicted $p = \Pr[\mathrm{bit} = 1]$. The realized code length is
 
-$$
+```math
 L = \sum_{i} -\log_2 q_i, \qquad
 q_i = \begin{cases} p_i & \text{bit}_i = 1 \\ 1 - p_i & \text{bit}_i = 0, \end{cases}
-$$
+```
 
 so every component downstream is trained to minimize exactly this
 cross-entropy loss.
@@ -252,10 +252,10 @@ cross-entropy loss.
 
 Mixing happens in the logistic (log-odds) domain, mapped by
 
-$$
+```math
 \mathrm{squash}(x) = \frac{4096}{1 + e^{-x/256}}, \qquad
 \mathrm{stretch}(p) = \mathrm{squash}^{-1}(p) = 256 \ln \frac{p}{4096 - p},
-$$
+```
 
 with $x \in [-2047, 2047]$ and $p \in (0, 4096)$. Both are precomputed
 integer tables (`cm_tables.rs`), which is what makes the whole pipeline
@@ -272,7 +272,7 @@ A slot holds **two** predictors, both fed to the mixer (a "hybrid ICM"):
   slot has seen (fast when fresh, stable when confident);
 - an 8-bit **bit-history state**: a bounded $(n_0, n_1)$ counter-pair
   automaton (~120 states) with non-stationarity discounting — on observing
-  bit 1, $n_1 \mathrel{+}= 1$ and if $n_0 > 2$, $n_0 \leftarrow n_0/2 + 1$
+  bit 1, $n_1 \leftarrow n_1 + 1$ and if $n_0 > 2$, $n_0 \leftarrow n_0/2 + 1$
   — mapped through a per-model **state map** (state → probability, also
   adaptively updated with a rate floor so it never stops adapting).
 
@@ -299,9 +299,9 @@ Rather than treating orders independently, orders 2→3→4→5→6→8 form an
 by the higher order's bit-history state $s$, that refines the running
 prediction
 
-$$
+```math
 t_{k} = \mathrm{clamp}\!\big(w_{s,0}\, t_{k-1} + w_{s,1}\, \mathrm{stretch}(p_k)\big),
-$$
+```
 
 seeded with $t_1 = \mathrm{stretch}(p_{o1})$ and initialized at
 $(w_0, w_1) = (0.75, 0.25)$ in fixed point. Each stage trains on its own
@@ -314,19 +314,19 @@ cannot express.
 The mixer computes, over $n = 31$ inputs $t_i = \mathrm{stretch}(p_i)$ (two
 per model, plus chain, match, and bias):
 
-$$
+```math
 p_{\mathrm{mix}} = \mathrm{squash}\!\left( \sum_{B \in \{1,2\}} \sum_{i=1}^{n} w^{(B)}_{c_B, i}\, t_i \right),
-$$
+```
 
 with **two weight banks** selected by different contexts — bank 1 by the
 partial byte $c_0$ and whether a match is active, bank 2 by the previous
 byte and a match-length bucket — summed before the squash (paq8-style).
-After coding each bit $y \in \{0,1\}$, both banks receive the online
+After coding each bit $y \in \lbrace 0,1 \rbrace$, both banks receive the online
 logistic-regression update
 
-$$
+```math
 w^{(B)}_{c_B, i} \mathrel{+}= \eta \; t_i \,\big(y - p_{\mathrm{mix}}\big),
-$$
+```
 
 which is exact gradient descent on the coding loss $-\log_2 q$: weights grow
 for models that were right when the blend was wrong. This is the mechanism
@@ -341,24 +341,24 @@ conditioned on progressively richer contexts (current partial byte; previous
 byte × partial byte; current word hash). An APM interpolates between 33
 buckets in the stretch domain:
 
-$$
+```math
 p' = (1 - \lambda)\, T[c, j] + \lambda\, T[c, j{+}1], \qquad
 j, \lambda \;\text{from}\; \mathrm{stretch}(p),
-$$
+```
 
 and nudges the two active buckets toward each outcome. Each stage's output
 is blended with its input ($\tfrac{1}{4}$ input, $\tfrac{3}{4}$ refinement
-for the first two stages; $\tfrac{1}{2}$/$\tfrac{1}{2}$ for the word stage)
+for the first two stages; half/half for the word stage)
 — APMs correct calibration error without being trusted outright.
 
 ### 5.8 Memory scaling
 
 Table size adapts to input length $\ell$ and the memory budget:
 
-$$
+```math
 b = \mathrm{clamp}\big(\lceil \log_2 \ell \rceil + 3,\; 16,\; 26\big), \qquad
 \mathrm{mem}(b) \approx 12 \cdot 4 \cdot 2^{b} + 4 \cdot 2^{b_m} + 2^{20} \;\text{bytes},
-$$
+```
 
 reduced until it fits the per-job budget (§9). The chosen geometry is
 recorded in the stream header, so decompression allocates exactly what
@@ -372,17 +372,17 @@ No single codec wins everywhere. Because time is explicitly not a goal,
 densezip runs *all* applicable backends on every channel in parallel and
 keeps the smallest output **that round-trips**:
 
-$$
-\beta^\*(x) = \underset{\beta \in \mathcal{B}}{\arg\min} \; |\beta(x)|
+```math
+\beta^{*}(x) = \underset{\beta \in \mathcal{B}}{\arg\min} \; |\beta(x)|
 \quad \text{s.t.} \quad \beta^{-1}(\beta(x)) = x,
 \qquad
 \mathcal{B} = \{\text{store}, \text{zstd}, \text{brotli}, \text{LZMA}, \text{dzcm}\}.
-$$
+```
 
 Details that matter in practice:
 
 - **LZMA is itself a race** over three parameter sets
-  $(lc, lp, pb) \in \{(3,0,2), (3,0,0), (0,0,0)\}$ — the `.lzma` header is
+  $(lc, lp, pb) \in \lbrace (3,0,2), (3,0,0), (0,0,0) \rbrace$ — the `.lzma` header is
   self-describing, so all three share one backend id. This decided the
   closest benchmark file (`nci`, −0.1%).
 - zstd runs at level 22 with long-distance matching (128 MiB window);
@@ -461,10 +461,10 @@ densezip targets machines from 8 GiB laptops to large workstations with one
 knob. The budget $M$ (default: 75% of available RAM, or `--mem` explicitly)
 funds channel buffers and $k$ concurrent compression jobs:
 
-$$
+```math
 M_{\mathrm{usable}} = \max\big(M - 2 H,\; M/4\big), \qquad
-k = \min\big(\max(\lfloor M_{\mathrm{usable}} / 2^{32} \rfloor, 1),\; \#\text{jobs}\big),
-$$
+k = \min\big(\max(\lfloor M_{\mathrm{usable}} / 2^{32} \rfloor, 1),\; n_{\mathrm{jobs}}\big),
+```
 
 where $H$ is the total held channel bytes — i.e. roughly one job per 4 GiB
 of headroom, each job receiving $M_{\mathrm{usable}}/k$ to divide between
