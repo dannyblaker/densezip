@@ -235,7 +235,7 @@ racing takes whichever codec is smallest per stream.
 
 ```
 cargo build --release
-cargo test --release        # 14 integration + 9 unit tests, all round-trip based
+cargo test --release
 ```
 
 Requires Rust stable. The compressor allocates large hash tables (hundreds of
