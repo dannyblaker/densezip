@@ -4,8 +4,7 @@ An archiver whose only goal is the **smallest possible output** — smaller than
 `gzip -9`, `xz -9e`, `zstd --ultra -22`, and `7z -mx=9` on real-world files.
 Speed and memory are explicitly sacrificed for ratio.
 
-The CLI command is `dnz` and archives use the `.dnz` extension (like
-`zstd`/`.zst`); "densezip" is the project name.
+The CLI command is `dnz` and archives use the `.dnz` extension.
 
 ```
 dnz a archive.dnz <files/dirs...>   # create (verifies bit-exact reconstruction)
