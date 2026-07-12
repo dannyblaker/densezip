@@ -479,7 +479,7 @@ flowchart LR
     P0 --> P1["…"]
     P1 --> PN["channel payload N<br/>(pixel blobs)"]
     PN --> TOC["TOC (zstd-19)"]
-    TOC --> FOOT["toc_offset u64<br/>toc_len u64<br/>end magic"]
+    TOC --> FOOT["toc_offset u64<br/>toc_len u64<br/>closing magic"]
 ```
 
 The TOC stores, per entry: path, size, xxh3-64 hash, and the serialized
