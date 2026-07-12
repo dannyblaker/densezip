@@ -73,6 +73,7 @@ fn lzma_compress(data: &[u8], dict_cap: u64) -> Result<Vec<u8>> {
         let mut w = LzmaWriter::new_use_header(Vec::new(), &opts, Some(data.len() as u64))?;
         w.write_all(data)?;
         let out = w.finish()?;
+        crate::progress::add(data.len() as u64 * crate::progress::W_LZMA);
         if best.as_ref().is_none_or(|b| out.len() < b.len()) {
             best = Some(out);
         }
@@ -94,7 +95,9 @@ fn zstd_compress(data: &[u8]) -> Result<Vec<u8>> {
     ))?;
     enc.set_parameter(zstd::zstd_safe::CParameter::WindowLog(27))?;
     enc.write_all(data)?;
-    Ok(enc.finish()?)
+    let out = enc.finish()?;
+    crate::progress::add(data.len() as u64 * crate::progress::W_ZSTD);
+    Ok(out)
 }
 
 fn zstd_decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
@@ -114,6 +117,7 @@ fn brotli_compress(data: &[u8]) -> Result<Vec<u8>> {
     };
     let mut out = Vec::new();
     brotli::BrotliCompress(&mut std::io::Cursor::new(data), &mut out, &params)?;
+    crate::progress::add(data.len() as u64 * crate::progress::W_BROTLI);
     Ok(out)
 }
 
@@ -152,9 +156,12 @@ pub fn decompress(id: u8, comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
         ZSTD => zstd_decompress(comp, raw_len)?,
         BROTLI => brotli_decompress(comp, raw_len)?,
         LZMA => lzma_decompress(comp, raw_len)?,
-        CM => crate::cm::decompress(comp, raw_len)?,
+        CM => crate::cm::decompress(comp, raw_len)?, // reports its own progress
         _ => bail!("unknown backend {}", id),
     };
+    if id != CM {
+        crate::progress::add(raw_len as u64 * crate::progress::W_FAST_D);
+    }
     if out.len() != raw_len {
         bail!(
             "backend {} produced {} bytes, expected {}",

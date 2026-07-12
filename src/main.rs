@@ -15,6 +15,9 @@ use std::path::PathBuf;
 struct Cli {
     #[command(subcommand)]
     cmd: Cmd,
+    /// Show a progress bar with ETA on stderr (pack/extract/verify)
+    #[arg(long, global = true)]
+    progress: bool,
 }
 
 #[derive(Subcommand)]
@@ -72,7 +75,10 @@ enum Cmd {
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
-    match cli.cmd {
+    if cli.progress {
+        densezip::progress::start();
+    }
+    let result = match cli.cmd {
         Cmd::A {
             archive,
             inputs,
@@ -122,5 +128,7 @@ fn main() -> Result<()> {
             );
             Ok(())
         }
-    }
+    };
+    densezip::progress::finish();
+    result
 }

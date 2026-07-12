@@ -11,6 +11,7 @@ pub mod backends;
 pub mod channels;
 pub mod cm;
 pub mod plan;
+pub mod progress;
 pub mod rebuild;
 pub mod scan;
 pub mod util;

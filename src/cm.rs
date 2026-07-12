@@ -843,13 +843,16 @@ pub fn compress_with_stride(
     }
     let mut model = Model::new(&cfg, input.len());
     let mut enc = Encoder::new();
-    for &byte in input {
-        for j in (0..8).rev() {
-            let bit = ((byte >> j) & 1) as i32;
-            let p = model.predict();
-            enc.encode(bit, p);
-            model.update(bit);
+    for chunk in input.chunks(1 << 16) {
+        for &byte in chunk {
+            for j in (0..8).rev() {
+                let bit = ((byte >> j) & 1) as i32;
+                let p = model.predict();
+                enc.encode(bit, p);
+                model.update(bit);
+            }
         }
+        crate::progress::add(chunk.len() as u64 * crate::progress::W_CM);
     }
     let mut out = header;
     out.extend_from_slice(&enc.flush());
@@ -886,12 +889,18 @@ pub fn decompress(comp: &[u8], raw_len: usize) -> Result<Vec<u8>> {
     }
     let mut model = Model::new(&cfg, raw_len);
     let mut dec = Decoder::new(&comp[r.pos..]);
-    for _ in 0..raw_len {
-        for _ in 0..8 {
-            let p = model.predict();
-            let bit = dec.decode(p);
-            model.update(bit);
+    let mut remaining = raw_len;
+    while remaining > 0 {
+        let n = remaining.min(1 << 16);
+        for _ in 0..n {
+            for _ in 0..8 {
+                let p = model.predict();
+                let bit = dec.decode(p);
+                model.update(bit);
+            }
         }
+        crate::progress::add(n as u64 * crate::progress::W_CM);
+        remaining -= n;
     }
     let mut out = model.buf;
     if flags & FLAG_E8E9 != 0 {

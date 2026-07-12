@@ -11,6 +11,7 @@
 use crate::backends;
 use crate::channels::{Channels, Cursors, PixelBlob};
 use crate::plan::{Seg, read_segs, remap_blobs, write_segs};
+use crate::progress;
 use crate::rebuild::render_segs;
 use crate::scan::plan_bytes;
 use crate::util::{Reader, human, write_varint, xxh3};
@@ -108,16 +109,17 @@ fn plan_file(abs: &Path, rel: &str, is_dir: bool) -> Result<PlannedFile> {
         render_segs(&segs, &mut cur, &mut rendered).is_ok() && rendered == data
     };
     if !ok {
-        eprintln!(
+        crate::progress::println_above(&format!(
             "warning: transform verification failed for {}, storing raw",
             rel
-        );
+        ));
         delta = Channels::default();
         delta.plain.extend_from_slice(&data);
         segs = vec![Seg::Raw {
             len: data.len() as u64,
         }];
     }
+    crate::progress::add(data.len() as u64 * crate::progress::W_PLAN);
     Ok(PlannedFile {
         path: rel.to_string(),
         is_dir: false,
@@ -148,6 +150,14 @@ pub fn pack(
     };
 
     // Plan all files in parallel.
+    progress::set_phase("planning");
+    progress::add_total(
+        files
+            .iter()
+            .filter(|(_, _, is_dir)| !is_dir)
+            .map(|(abs, ..)| fs::metadata(abs).map_or(0, |m| m.len()) * progress::W_PLAN)
+            .sum(),
+    );
     let planned: Vec<PlannedFile> = files
         .par_iter()
         .map(|(abs, rel, is_dir)| plan_file(abs, rel, *is_dir))
@@ -194,7 +204,7 @@ pub fn pack(
     let per_job = backends::MemBudget {
         bytes: usable / concurrent as u64,
     };
-    eprintln!(
+    progress::println_above(&format!(
         "memory budget: {} ({}) -> {} concurrent job(s), {} each",
         human(budget_bytes),
         if mem_gib.is_some() {
@@ -204,6 +214,21 @@ pub fn pack(
         },
         concurrent,
         human(per_job.bytes)
+    ));
+
+    progress::set_phase("compressing");
+    progress::add_total(
+        jobs.iter()
+            .map(|(data, cm, _, bpp, is_pixels)| {
+                // 3/4-bpp pixel blobs are raced twice (identity + sub-green)
+                let races = if *is_pixels && (*bpp == 3 || *bpp == 4) {
+                    2
+                } else {
+                    1
+                };
+                progress::race_units(data.len() as u64, *cm) * races
+            })
+            .sum(),
     );
 
     // (backend, payload, pixel transform)
@@ -278,6 +303,26 @@ pub fn pack(
     out.extend_from_slice(END_MAGIC);
     fs::write(archive_path, &out).with_context(|| format!("writing {}", archive_path.display()))?;
 
+    if verify {
+        progress::set_phase("verifying");
+        let archive = read_archive(archive_path)?;
+        let mut cur = Cursors::new(&archive.channels);
+        for e in &archive.entries {
+            if e.is_dir {
+                continue;
+            }
+            let mut rendered = Vec::with_capacity(e.size as usize);
+            render_segs(&e.segs, &mut cur, &mut rendered)
+                .with_context(|| format!("verify: render failed for {}", e.path))?;
+            ensure!(
+                rendered.len() as u64 == e.size && xxh3(&rendered) == e.hash,
+                "verify: content mismatch for {}",
+                e.path
+            );
+        }
+    }
+    progress::finish();
+
     let total_in: u64 = entries.iter().map(|e| e.size).sum();
     println!(
         "{} file(s), {} -> {} ({:.2}%)",
@@ -306,21 +351,6 @@ pub fn pack(
     }
 
     if verify {
-        let archive = read_archive(archive_path)?;
-        let mut cur = Cursors::new(&archive.channels);
-        for e in &archive.entries {
-            if e.is_dir {
-                continue;
-            }
-            let mut rendered = Vec::with_capacity(e.size as usize);
-            render_segs(&e.segs, &mut cur, &mut rendered)
-                .with_context(|| format!("verify: render failed for {}", e.path))?;
-            ensure!(
-                rendered.len() as u64 == e.size && xxh3(&rendered) == e.hash,
-                "verify: content mismatch for {}",
-                e.path
-            );
-        }
         println!("verified: all files reconstruct bit-exactly");
     }
     Ok(())
@@ -395,6 +425,14 @@ pub fn read_archive(path: &Path) -> Result<Archive> {
     }
 
     // Decompress channel payloads (in parallel).
+    progress::add_total(
+        infos
+            .iter()
+            .map(|&(backend, _, raw_len)| {
+                progress::decompress_units(backend == backends::CM, raw_len)
+            })
+            .sum(),
+    );
     let mut offsets = Vec::with_capacity(n_channels);
     let mut off = 8usize;
     for &(_, comp_len, _) in &infos {
@@ -450,7 +488,9 @@ fn safe_join(out_dir: &Path, rel: &str) -> Result<PathBuf> {
 }
 
 pub fn extract(archive_path: &Path, out_dir: &Path, overwrite: bool) -> Result<()> {
+    progress::set_phase("extracting");
     let archive = read_archive(archive_path)?;
+    progress::finish();
     let mut cur = Cursors::new(&archive.channels);
     for e in &archive.entries {
         let dest = safe_join(out_dir, &e.path)?;
@@ -479,6 +519,7 @@ pub fn extract(archive_path: &Path, out_dir: &Path, overwrite: bool) -> Result<(
 }
 
 pub fn test(archive_path: &Path) -> Result<()> {
+    progress::set_phase("verifying");
     let archive = read_archive(archive_path)?;
     let mut cur = Cursors::new(&archive.channels);
     let mut n = 0u64;
@@ -498,6 +539,7 @@ pub fn test(archive_path: &Path) -> Result<()> {
         n += 1;
         total += e.size;
     }
+    progress::finish();
     println!("OK: {} file(s), {} verified bit-exact", n, human(total));
     Ok(())
 }

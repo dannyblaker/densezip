@@ -58,7 +58,8 @@ dnz ls archive.dnz                  # list contents
 
 Options: `--no-cm` disables the slow context-mixing backend (much faster,
 still beats 7z on most container formats); `--no-verify` skips the post-pack
-self-check; `--mem <GiB>` caps memory use.
+self-check; `--mem <GiB>` caps memory use; `--progress` shows a live
+progress bar with an ETA on stderr (works on `a`, `x`, and `t`)
 
 **Memory budget:** by default densezip auto-detects available RAM and uses up
 to 75% of it, sizing its model tables, LZMA dictionaries, and job concurrency
