@@ -495,7 +495,14 @@ TOCs fail with an error rather than an allocation storm.
 Full methodology and tables in [BENCHMARKS.md](BENCHMARKS.md); competitors
 are `gzip -9`, `bzip2 -9`, `xz -9e`, `zstd --ultra -22 --long=27`,
 `7z -mx=9`, and the baseline is the **best competitor per file** — stricter
-than any single tool. densezip wins all 20 files. Highlights:
+than any single tool. densezip wins all 20 files:
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks-dark.svg">
+  <img alt="Bar chart: how much smaller densezip's output is than the best competitor's for each of 20 files. Reductions range from 0.1% (silesia/nci) to 79.2% (sample.png); totals are 8.9% on the real-world corpus and 15.4% on Silesia." src="assets/benchmarks-light.svg">
+</picture>
+
+The mechanism behind each headline margin:
 
 | file | mechanism | vs best competitor |
 |---|---|---:|
