@@ -138,7 +138,7 @@ single tool:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks-dark.svg">
-  <img alt="Benchmark chart: for each of 20 files, densezip's output as a share of the best competitor's. Margins range from −0.1% (silesia/nci) to −79.2% (sample.png); totals are −8.9% on the real-world corpus and −15.4% on Silesia." src="assets/benchmarks-light.svg">
+  <img alt="Bar chart: how much smaller densezip's output is than the best competitor's for each of 20 files. Reductions range from 0.1% (silesia/nci) to 79.2% (sample.png); totals are 8.9% on the real-world corpus and 15.4% on Silesia." src="assets/benchmarks-light.svg">
 </picture>
 
 Run `bench/bench.sh <corpus-dir>` to reproduce (also verifies every
