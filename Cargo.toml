@@ -1,0 +1,32 @@
+[package]
+name = "densezip"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = "1.0.103"
+brotli = "8.0.4"
+clap = { version = "4.6.1", features = ["derive"] }
+crc32fast = "1.5.0"
+lepton_jpeg = "0.5.8"
+lzma-rust2 = "0.16.5"
+preflate-rs = "0.7.6"
+rayon = "1.12.0"
+xxhash-rust = { version = "0.8.16", features = ["xxh3"] }
+zstd = "0.13.3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1
+
+[profile.test]
+opt-level = 2
+
+[dev-dependencies]
+flate2 = "1.1.9"
+tempfile = "3.27.0"
+
+[[bin]]
+name = "dnz"
+path = "src/main.rs"
