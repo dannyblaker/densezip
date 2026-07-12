@@ -10,7 +10,21 @@ use std::path::PathBuf;
 #[command(
     name = "dnz",
     version,
-    about = "Dense Zip: An archiver that produces small archives."
+    about = "Dense Zip: an archiver tuned for the smallest possible output \
+             (speed is deliberately sacrificed for size)",
+    after_help = "\
+Examples:
+  dnz a backup.dnz documents/          archive a folder (recursive)
+  dnz a backup.dnz notes.txt photos/   mix files and folders freely
+  dnz a --progress backup.dnz data/    show a progress bar with ETA
+  dnz a --no-cm backup.dnz data/       much faster, slightly larger output
+  dnz x backup.dnz -o restored/        extract into restored/
+  dnz t backup.dnz                     verify every file reconstructs
+  dnz ls backup.dnz                    list contents
+  dnz update                           update dnz to the latest release
+
+Every archive is self-checked: after packing, it is read back and every
+file is verified to reconstruct bit-exactly (--no-verify to skip)."
 )]
 struct Cli {
     #[command(subcommand)]
@@ -22,10 +36,13 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Cmd {
-    /// Create an archive
-    #[command(alias = "add")]
+    /// Create an archive (directories are added recursively)
+    #[command(visible_alias = "add")]
     A {
+        /// The .dnz archive to create
         archive: PathBuf,
+        /// Files and/or directories to add; directories recurse
+        #[arg(required = true)]
         inputs: Vec<PathBuf>,
         /// Skip the post-pack verification pass
         #[arg(long)]
@@ -38,12 +55,13 @@ enum Cmd {
         mem: Option<f64>,
     },
     /// Extract an archive
-    #[command(alias = "extract")]
+    #[command(visible_alias = "extract")]
     X {
         archive: PathBuf,
-        /// Output directory
+        /// Output directory (created if missing)
         #[arg(short, long, default_value = ".")]
         out: PathBuf,
+        /// Overwrite existing files instead of stopping
         #[arg(long)]
         overwrite: bool,
     },
