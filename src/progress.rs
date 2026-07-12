@@ -59,9 +59,17 @@ pub fn decompress_units(is_cm: bool, raw_len: u64) -> u64 {
 /// Print a line to stderr without garbling an active progress bar.
 pub fn println_above(msg: &str) {
     if ACTIVE.load(Relaxed) {
-        eprint!("\r{:<90}\r", "");
+        eprint!("\r{:<w$}\r", "", w = term_width() - 1);
     }
     eprintln!("{msg}");
+}
+
+/// Width of the terminal on stderr; anything longer than this minus one
+/// wraps, which breaks `\r`-based redrawing.
+fn term_width() -> usize {
+    terminal_size::terminal_size_of(std::io::stderr())
+        .map_or(80, |(w, _)| w.0 as usize)
+        .clamp(30, 200)
 }
 
 pub fn start() {
@@ -85,11 +93,16 @@ pub fn start() {
             }
             let eta = eta(&window, done, total);
             let phase = *PHASE.lock().unwrap();
-            eprint!("\r{:<90}", render(phase, done, total, elapsed, eta));
+            let width = term_width();
+            eprint!(
+                "\r{:<w$}",
+                render(phase, done, total, elapsed, eta, width),
+                w = width - 1
+            );
             let _ = std::io::stderr().flush();
             std::thread::sleep(Duration::from_millis(200));
         }
-        eprint!("\r{:<90}\r", "");
+        eprint!("\r{:<w$}\r", "", w = term_width() - 1);
         let _ = std::io::stderr().flush();
     });
     *HANDLE.lock().unwrap() = Some(handle);
@@ -115,23 +128,40 @@ fn eta(window: &VecDeque<(f64, u64)>, done: u64, total: u64) -> Option<Duration>
     Some(Duration::from_secs_f64((total - done) as f64 / rate))
 }
 
-fn render(phase: &str, done: u64, total: u64, elapsed: Duration, eta: Option<Duration>) -> String {
-    const WIDTH: usize = 28;
+/// Render one bar line that fits in `width` columns: the bar shrinks to
+/// make room for the text, and the whole line is truncated as a last
+/// resort so a redraw never wraps to a second terminal line.
+fn render(
+    phase: &str,
+    done: u64,
+    total: u64,
+    elapsed: Duration,
+    eta: Option<Duration>,
+    width: usize,
+) -> String {
     let frac = if total > 0 {
         (done as f64 / total as f64).clamp(0.0, 1.0)
     } else {
         0.0
     };
-    let filled = (frac * WIDTH as f64) as usize;
-    format!(
-        "{:<12} [{}{}] {:>5.1}%  elapsed {}  ETA {}",
-        phase,
-        "#".repeat(filled),
-        "-".repeat(WIDTH - filled),
+    let head = format!("{phase:<12} ");
+    let tail = format!(
+        " {:>5.1}%  elapsed {}  ETA {}",
         frac * 100.0,
         fmt_dur(elapsed),
         eta.map_or_else(|| "--:--".to_string(), fmt_dur),
-    )
+    );
+    let bar = (width - 1)
+        .saturating_sub(head.len() + tail.len() + 2)
+        .clamp(8, 28);
+    let filled = (frac * bar as f64) as usize;
+    let mut line = format!(
+        "{head}[{}{}]{tail}",
+        "#".repeat(filled),
+        "-".repeat(bar - filled)
+    );
+    line.truncate(width - 1);
+    line
 }
 
 fn fmt_dur(d: Duration) -> String {
@@ -156,13 +186,36 @@ mod tests {
 
     #[test]
     fn render_line() {
-        let line = render("compressing", 50, 100, Duration::from_secs(60), None);
+        let line = render("compressing", 50, 100, Duration::from_secs(60), None, 80);
         assert!(line.contains("50.0%"));
         assert!(line.contains("elapsed 1:00"));
         assert!(line.contains("ETA --:--"));
         // zero total must not divide by zero or overfill the bar
-        let line = render("planning", 5, 0, Duration::from_secs(1), None);
+        let line = render("planning", 5, 0, Duration::from_secs(1), None, 80);
         assert!(line.contains("0.0%"));
+    }
+
+    #[test]
+    fn render_never_exceeds_width() {
+        let eta = Some(Duration::from_secs(3661)); // longest ETA format
+        for width in [30, 40, 60, 80, 120, 200] {
+            let line = render(
+                "compressing",
+                999,
+                1000,
+                Duration::from_secs(3661),
+                eta,
+                width,
+            );
+            assert!(
+                line.len() < width,
+                "width {width}: {} chars: {line:?}",
+                line.len()
+            );
+        }
+        // roomy widths keep the full text, ETA included
+        let line = render("compressing", 1, 2, Duration::from_secs(1), eta, 80);
+        assert!(line.contains("ETA 1:01:01"));
     }
 
     #[test]

@@ -1,6 +1,6 @@
 [package]
 name = "densezip"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2024"
 description = "An archiver tuned for the smallest possible output: recompression of deflate/JPEG containers, a context-mixing compressor, and per-stream backend racing"
 license = "AGPL-3.0-or-later"
@@ -18,6 +18,7 @@ lepton_jpeg = "0.5.8"
 lzma-rust2 = "0.16.5"
 preflate-rs = "0.7.6"
 rayon = "1.12.0"
+terminal_size = "0.4.4"
 xxhash-rust = { version = "0.8.16", features = ["xxh3"] }
 zstd = "0.13.3"
 
