@@ -1,5 +1,7 @@
 # densezip
 
+[![CI](https://github.com/dannyblaker/densezip/actions/workflows/ci.yml/badge.svg)](https://github.com/dannyblaker/densezip/actions/workflows/ci.yml)
+
 An archiver whose only goal is the **smallest possible output** — smaller than
 `gzip -9`, `xz -9e`, `zstd --ultra -22`, and `7z -mx=9` on real-world files.
 Speed and memory are explicitly sacrificed for ratio.
