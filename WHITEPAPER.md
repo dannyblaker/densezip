@@ -537,7 +537,6 @@ takes whichever codec is smallest per stream.
   the remaining gap to state-of-the-art CM on text.
 - **Symlinks and special files** are skipped; the archive model is files,
   directories, and bytes.
-- The `.dnz` format is young (v0.1) and may change between versions.
 
 ## 13. References
 

@@ -241,12 +241,6 @@ cargo test --release        # 14 integration + 9 unit tests, all round-trip base
 Requires Rust stable. The compressor allocates large hash tables (hundreds of
 MB to a few GB depending on input size) and uses all cores for backend racing.
 
-## Status
-
-The format is young (v0.1) and may still change between versions — don't use
-`.dnz` as your only copy of anything yet. Every archive is self-checked at
-pack time, and `dnz t` verifies bit-exact reconstruction at any time.
-
 ## License
 
 AGPL-3.0-or-later. If you want to use densezip in a proprietary product,
