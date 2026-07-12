@@ -13,7 +13,7 @@
 
 ## 1. Problem statement
 
-Let $F$ be an input file (or file set) and $A$ a compressor. Conventional
+Let *F* be an input file (or file set) and $A$ a compressor. Conventional
 compressors optimize a ratio/speed trade-off. densezip solves the degenerate
 but practically interesting corner of that space:
 
