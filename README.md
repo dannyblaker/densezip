@@ -50,7 +50,9 @@ pack with `--mem` matched to the smallest machine that must read the archive.
 
 ## Why it wins
 
-Three stacked ideas, each validated by measurement:
+Three stacked ideas, each validated by measurement (see
+[WHITEPAPER.md](WHITEPAPER.md) for the full technical treatment with
+diagrams and the underlying math):
 
 **1. Recompression.** Most "hard to compress" files are already-compressed
 containers: PDFs, PNGs, docx/xlsx, jar, gz — all deflate inside. densezip
