@@ -8,6 +8,26 @@ Speed and memory are explicitly sacrificed for ratio.
 
 The CLI command is `dnz` and archives use the `.dnz` extension.
 
+## Install
+
+Linux / macOS:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/dannyblaker/densezip/master/install.sh | bash
+```
+
+Windows (PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/dannyblaker/densezip/master/install.ps1 | iex
+```
+
+Both install the latest stable release (prebuilt for Linux x86_64/arm64,
+macOS Intel/Apple Silicon, and Windows x86_64) and can be re-run any time to
+update. Or build from source with Rust stable: `cargo build --release`.
+
+## Usage
+
 ```
 dnz a archive.dnz <files/dirs...>   # create (verifies bit-exact reconstruction)
 dnz x archive.dnz -o <dir>          # extract
