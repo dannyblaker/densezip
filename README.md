@@ -8,6 +8,8 @@ Speed and memory are explicitly sacrificed for ratio.
 
 The CLI command is `dnz` and archives use the `.dnz` extension.
 
+See [WHITEPAPER.md](WHITEPAPER.md) for a technical overview of how it works.
+
 ## Install
 
 Linux / macOS:

@@ -155,6 +155,6 @@ if __name__ == "__main__":
     root = pathlib.Path(__file__).resolve().parent.parent / "assets"
     root.mkdir(exist_ok=True)
     for theme in THEMES:
-        path = root / f"benchmarks-{theme}.svg"
+        path = root / f"benchmarks-{theme}-chart.svg"
         path.write_text(render(theme))
         print(f"wrote {path}")
