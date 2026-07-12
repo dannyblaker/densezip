@@ -141,7 +141,7 @@ single tool:
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks-dark.svg">
-  <img alt="Bar chart: how much smaller densezip's output is than the best competitor's for each of 20 files. Reductions range from 0.1% (silesia/nci) to 79.2% (sample.png); totals are 8.9% on the real-world corpus and 15.4% on Silesia." src="assets/benchmarks-light.svg">
+  <img alt="Bar chart: how much smaller densezip's output is than the best competitor's for each of 20 files. Reductions range from 0.1% (silesia/nci) to 79.2% (sample.png)." src="assets/benchmarks-light.svg">
 </picture>
 
 Machine: 2× Xeon E5-2683 v4 (32 cores / 64 threads), 125 GiB RAM.

@@ -34,8 +34,8 @@ SILESIA = [
     ("nci", 0.1),
 ]
 SECTIONS = [
-    ("Real-world files", "total −8.9%", REAL),
-    ("Silesia corpus (212 MB standard benchmark)", "total −15.4%", SILESIA),
+    ("Real-world files", REAL),
+    ("Silesia corpus (212 MB standard benchmark)", SILESIA),
 ]
 
 THEMES = {
@@ -117,10 +117,9 @@ def render(theme):
     grid_top = y
 
     body_rows = []
-    for title, total, rows in SECTIONS:
+    for title, rows in SECTIONS:
         y += 20
         body_rows.append(text(16, y, title, 13, t["primary"], "600"))
-        body_rows.append(text(BAR_X + BAR_W + 50, y, total, 13, t["primary"], "600", "end"))
         y += 12
         for name, margin in rows:
             body_rows.append(text(NAME_X, y + 11, name, 12.5, t["secondary"], anchor="end"))

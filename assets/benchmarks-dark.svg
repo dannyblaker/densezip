@@ -13,7 +13,6 @@
 <line x1="679.0" y1="112" x2="679.0" y2="708" stroke="#2c2c2a" stroke-width="1"/>
 <line x1="844.0" y1="112" x2="844.0" y2="708" stroke="#2c2c2a" stroke-width="1"/>
 <text x="16" y="132" font-size="13" fill="#ffffff" font-weight="600" text-anchor="start">Real-world files</text>
-<text x="894" y="132" font-size="13" fill="#ffffff" font-weight="600" text-anchor="end">total −8.9%</text>
 <text x="176" y="155" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">sample.png</text>
 <path d="M184,144 h649.4 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-649.4 z" fill="#3987e5"/>
 <text x="843.4" y="155" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−79.2%</text>
@@ -39,7 +38,6 @@
 <path d="M184,326 h4.2 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-4.2 z" fill="#3987e5"/>
 <text x="198.25" y="337" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−1.0%</text>
 <text x="16" y="384" font-size="13" fill="#ffffff" font-weight="600" text-anchor="start">Silesia corpus (212 MB standard benchmark)</text>
-<text x="894" y="384" font-size="13" fill="#ffffff" font-weight="600" text-anchor="end">total −15.4%</text>
 <text x="176" y="407" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">webster</text>
 <path d="M184,396 h222.9 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-222.9 z" fill="#3987e5"/>
 <text x="416.875" y="407" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−27.5%</text>
