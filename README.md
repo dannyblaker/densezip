@@ -1,4 +1,4 @@
-# densezip
+# Dense Zip
 
 [![CI](https://github.com/dannyblaker/densezip/actions/workflows/ci.yml/badge.svg)](https://github.com/dannyblaker/densezip/actions/workflows/ci.yml)
 
