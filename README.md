@@ -132,17 +132,18 @@ per file; extraction replays it bottom-up.
 
 ## Benchmarks
 
-Run `bench/bench.sh <corpus-dir>` to reproduce (also verifies every archive).
-See `BENCHMARKS.md` for the full report; highlights vs the **best** of
-gzip/bzip2/xz/zstd/7z per file:
+densezip wins on **all 20 files** across both corpora — against the *best*
+of gzip/bzip2/xz/zstd/7z chosen per file, a stricter baseline than any
+single tool:
 
-| file | best competitor | densezip | margin |
-|---|---:|---:|---:|
-| sample.png (desktop screenshot) | 202,667 | 42,193 | −79.2% |
-| sample.pdf (Et Lorem text) | 72,039 | 31,559 | −56.2% |
-| SQLite database | 157,108 | 74,365 | −52.7% |
-| photo.jpg | 325,424 | 257,170 | −21.0% |
-| Silesia (text/xml/binary) | xz/7z | dzcm | −0.1% … −27.5% |
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/benchmarks-dark.svg">
+  <img alt="Benchmark chart: for each of 20 files, densezip's output as a share of the best competitor's. Margins range from −0.1% (silesia/nci) to −79.2% (sample.png); totals are −8.9% on the real-world corpus and −15.4% on Silesia." src="assets/benchmarks-light.svg">
+</picture>
+
+Run `bench/bench.sh <corpus-dir>` to reproduce (also verifies every
+archive); see [BENCHMARKS.md](BENCHMARKS.md) for the full tables. The chart
+is generated from them by `bench/readme_chart.py`.
 
 ## Building & testing
 

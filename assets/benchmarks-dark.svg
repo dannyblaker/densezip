@@ -1,0 +1,89 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="920" height="698" viewBox="0 0 920 698" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI','Noto Sans',Helvetica,Arial,sans-serif" role="img" aria-label="densezip beats the best competitor on all 20 benchmark files">
+<text x="16" y="30" font-size="16" fill="#ffffff" font-weight="600" text-anchor="start">densezip vs the best competitor, per file</text>
+<text x="16" y="52" font-size="12" fill="#c3c2b7" font-weight="normal" text-anchor="start">Compressed size as a share of the best (smallest) output of gzip −9 · bzip2 −9 · xz −9e · zstd −22 · 7z −mx=9, chosen per file.</text>
+<text x="16" y="70" font-size="12" fill="#c3c2b7" font-weight="normal" text-anchor="start">Full track = best competitor (100%) · bar = densezip · labels = densezip's margin · every archive verified bit-exact.</text>
+<text x="16" y="106" font-size="13" fill="#ffffff" font-weight="600" text-anchor="start">Real-world files</text>
+<text x="844" y="106" font-size="13" fill="#ffffff" font-weight="600" text-anchor="end">total −8.9%</text>
+<text x="176" y="129" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">sample.png</text>
+<path d="M184,118 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,118 h133.3 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-133.3 z" fill="#3987e5"/>
+<text x="327.28" y="129" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−79.2%</text>
+<text x="176" y="155" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">sample.pdf</text>
+<path d="M184,144 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,144 h285.1 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-285.1 z" fill="#3987e5"/>
+<text x="479.08" y="155" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−56.2%</text>
+<text x="176" y="181" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">inventory.db</text>
+<path d="M184,170 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,170 h308.2 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-308.2 z" fill="#3987e5"/>
+<text x="502.17999999999995" y="181" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−52.7%</text>
+<text x="176" y="207" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">src.tar.gz</text>
+<path d="M184,196 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,196 h430.3 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-430.3 z" fill="#3987e5"/>
+<text x="624.28" y="207" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−34.2%</text>
+<text x="176" y="233" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">report.docx</text>
+<path d="M184,222 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,222 h479.8 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-479.8 z" fill="#3987e5"/>
+<text x="673.78" y="233" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−26.7%</text>
+<text x="176" y="259" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">sales.csv</text>
+<path d="M184,248 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,248 h514.1 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-514.1 z" fill="#3987e5"/>
+<text x="708.1" y="259" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−21.5%</text>
+<text x="176" y="285" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">photo.jpg</text>
+<path d="M184,274 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,274 h517.4 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-517.4 z" fill="#3987e5"/>
+<text x="711.4" y="285" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−21.0%</text>
+<text x="176" y="311" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">photo.png</text>
+<path d="M184,300 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,300 h649.4 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-649.4 z" fill="#3987e5"/>
+<text x="850" y="311" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−1.0%</text>
+<text x="16" y="354" font-size="13" fill="#ffffff" font-weight="600" text-anchor="start">Silesia corpus (212 MB standard benchmark)</text>
+<text x="844" y="354" font-size="13" fill="#ffffff" font-weight="600" text-anchor="end">total −15.4%</text>
+<text x="176" y="377" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">webster</text>
+<path d="M184,366 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,366 h474.5 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-474.5 z" fill="#3987e5"/>
+<text x="668.5" y="377" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−27.5%</text>
+<text x="176" y="403" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">ooffice</text>
+<path d="M184,392 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,392 h498.3 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-498.3 z" fill="#3987e5"/>
+<text x="692.26" y="403" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−23.9%</text>
+<text x="176" y="429" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">dickens</text>
+<path d="M184,418 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,418 h515.4 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-515.4 z" fill="#3987e5"/>
+<text x="709.42" y="429" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−21.3%</text>
+<text x="176" y="455" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">samba</text>
+<path d="M184,444 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,444 h524.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-524.0 z" fill="#3987e5"/>
+<text x="718.0" y="455" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−20.0%</text>
+<text x="176" y="481" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">reymont</text>
+<path d="M184,470 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,470 h525.3 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-525.3 z" fill="#3987e5"/>
+<text x="719.32" y="481" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−19.8%</text>
+<text x="176" y="507" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">osdb</text>
+<path d="M184,496 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,496 h540.5 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-540.5 z" fill="#3987e5"/>
+<text x="734.5" y="507" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−17.5%</text>
+<text x="176" y="533" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">xml</text>
+<path d="M184,522 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,522 h546.4 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-546.4 z" fill="#3987e5"/>
+<text x="740.44" y="533" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−16.6%</text>
+<text x="176" y="559" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">sao</text>
+<path d="M184,548 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,548 h571.5 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-571.5 z" fill="#3987e5"/>
+<text x="765.52" y="559" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−12.8%</text>
+<text x="176" y="585" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">mozilla</text>
+<path d="M184,574 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,574 h590.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-590.0 z" fill="#3987e5"/>
+<text x="784.0" y="585" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−10.0%</text>
+<text x="176" y="611" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">x-ray</text>
+<path d="M184,600 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,600 h614.4 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-614.4 z" fill="#3987e5"/>
+<text x="850" y="611" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−6.3%</text>
+<text x="176" y="637" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">mr</text>
+<path d="M184,626 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,626 h621.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-621.0 z" fill="#3987e5"/>
+<text x="850" y="637" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−5.3%</text>
+<text x="176" y="663" font-size="12.5" fill="#c3c2b7" font-weight="normal" text-anchor="end">nci</text>
+<path d="M184,652 h656.0 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-656.0 z" fill="#0d366b"/>
+<path d="M184,652 h655.3 a4,4 0 0 1 4,4 v6 a4,4 0 0 1 -4,4 h-655.3 z" fill="#3987e5"/>
+<text x="850" y="663" font-size="12" fill="#ffffff" font-weight="600" text-anchor="start">−0.1%</text>
+</svg>
