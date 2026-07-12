@@ -99,7 +99,10 @@ On the Silesia corpus it beats `xz -9e` by 13–24%.
 about time — so every stream is compressed with zstd, brotli, LZMA, *and*
 dzcm in parallel (plus alternate pixel representations for images), each
 round-trip verified, and the smallest wins. A stored fallback means output
-never meaningfully expands, even on random data.
+never meaningfully expands, even on random data. Since v0.1.5 the alternate
+pixel representations and the LZMA parameter variants race concurrently too
+instead of back-to-back — about 1.5× faster on image-heavy archives and
+nearly 3× with `--no-cm`, with byte-identical output.
 
 ## Correctness
 
